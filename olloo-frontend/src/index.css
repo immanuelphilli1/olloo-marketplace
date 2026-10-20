@@ -1,0 +1,123 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f7f9fa;
+  --color-bg-tertiary: #e4e6e6;
+  --color-border-primary: #f0f2f2;
+  --color-border-secondary: #e4e6e6;
+  --color-text-primary: #000607;
+  --color-text-secondary: #3f4040;
+  --color-text-tertiary: #717272;
+  --color-text-inverse: #ffffff;
+  --color-primary-orange: #ff6900;
+  --color-primary-green: #00bc7d;
+  --color-primary-red: #fb2c36;
+  --color-primary-gold: #fbbf24;
+  --color-orange-light: #fff7ed;
+  --color-red-light: #fef2f2;
+  --color-green-light: #ecfdf5;
+  --color-glass: rgba(128, 128, 128, 0.6);
+  --color-orange-lighter: rgba(255, 105, 0, 0.3);
+  --radius-firm: 8px;
+  --radius-firm-2: 12px;
+  --radius-circular: 200px;
+  --font-display: "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    overflow-x: clip;
+    width: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    overflow-x: clip;
+    width: 100%;
+    min-width: 0;
+    font-family: var(--font-body);
+    color: var(--color-text-primary);
+    background: var(--color-bg-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #root {
+    overflow-x: clip;
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/**
+ * Compact density on small screens only.
+ *
+ * Tailwind v4 derives every spacing utility (`p-4`, `gap-2`) and every font size
+ * (`text-sm`) from root variables, so overriding those two variables here tightens
+ * the entire app at once instead of hand-editing hundreds of utility classes.
+ *
+ * Both overrides sit inside `width < 40rem`, so tablet and desktop keep their
+ * current sizing. Breakpoints are unaffected: media queries resolve `rem` against
+ * the browser default rather than this root size, so `lg:` still switches at 1024px.
+ *
+ * The query is written as `max-width` rather than the `width < N` range form on
+ * purpose: the range syntax is compiled to `not all and (width>=40rem)` by the
+ * CSS minifier, which never matches and would silently disable this whole block.
+ */
+@media (max-width: 39.99rem) {
+  :root {
+    /* Type: one step down across the scale, so headings keep their visual
+       hierarchy while fitting more content on screen. This is the change that
+       reads most strongly as "compact". */
+    --text-xs: 0.6875rem;
+    --text-sm: 0.8125rem;
+    --text-base: 0.875rem;
+    --text-lg: 1rem;
+    --text-xl: 1.125rem;
+    --text-2xl: 1.3125rem;
+    --text-3xl: 1.625rem;
+    --text-4xl: 1.875rem;
+    --text-5xl: 2.375rem;
+
+    /* Spacing: a 7/8 scale, so `p-4` goes 16px -> 14px and `gap-2` 8px -> 7px.
+       This also scales `size-*`, since Tailwind backs width and height with the
+       same variable: icons shrink slightly (fine) but so do tap targets
+       (`size-10` wishlist heart: 40px -> 35px). That is still above the ~32px
+       floor for a usable target. If tap comfort should outweigh density, remove
+       this one line and keep the type scale alone. */
+    --spacing: 0.21875rem;
+  }
+}
+
+@keyframes logo-loading {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.08);
+    opacity: 0.65;
+  }
+}
+
+@layer utilities {
+  .animate-logo-loading {
+    animation: logo-loading 1.4s ease-in-out infinite;
+  }
+
+  .btn-orange {
+    background-image:
+      linear-gradient(90deg, rgba(68, 19, 6, 0) 0%, rgba(68, 19, 6, 0.2) 100%),
+      linear-gradient(90deg, #ff6900 0%, #ff6900 100%);
+  }
+}

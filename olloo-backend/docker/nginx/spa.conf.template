@@ -1,0 +1,218 @@
+# Production gateway for the same-origin storefront.
+#
+# The storefront is a React SPA built in a separate repository and published to a
+# host directory that is bind-mounted at /var/www/html/web (see
+# docker/scripts/publish-web.sh). It serves `/`. Laravel keeps everything it owns,
+# routed by prefix, so both live on one origin and there is no CORS in the path.
+#
+# Templated rather than static because ADMIN_PATH_PREFIX is per installation and
+# is the obscurity the staff portal depends on. nginx's entrypoint substitutes it
+# at container start, so rotating the prefix is a restart and not a rebuild.
+#
+# Two things about the substitution:
+#
+#   1. The image sets NGINX_ENVSUBST_FILTER so only ADMIN_PATH_PREFIX is
+#      substituted. Without it, an env var named `uri`, `args` or `host` would
+#      blank out the nginx variable of that name and quietly break routing.
+#   2. If ADMIN_PATH_PREFIX is absent from the gateway's environment, the
+#      ${ADMIN_PATH_PREFIX} below is left literal and nginx fails to start with an
+#      "invalid number of arguments in location" error pointing at the admin
+#      blocks. That is the intended failure: an unset prefix must stop the
+#      gateway, never silently mount the staff portal at /.
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name _;
+
+    # The SPA, through a `current` symlink so the storefront rolls back the same
+    # way the API does. nginx resolves the path per request, so repointing the
+    # symlink takes effect without a reload.
+    root /var/www/html/web/current;
+    index index.html;
+
+    # Product imports are CSV uploads and the admin portal posts media.
+    client_max_body_size 64M;
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    charset utf-8;
+
+    # The peer is the host reverse proxy, not Cloudflare itself. Trust the private
+    # ranges it arrives from and restore the visitor from CF-Connecting-IP so PHP
+    # sees a real address: ShopperLocale detects the country from it.
+    set_real_ip_from 127.0.0.1;
+    set_real_ip_from 10.0.0.0/8;
+    set_real_ip_from 172.16.0.0/12;
+    set_real_ip_from 192.168.0.0/16;
+    real_ip_header CF-Connecting-IP;
+    real_ip_recursive on;
+
+    # ---- Laravel ------------------------------------------------------------
+    # Every block below front-controllers into index.php under the Laravel tree.
+    # The root is restated per block because the server root is the SPA, and
+    # $realpath_root in the index.php block resolves against whichever location
+    # issued the internal redirect.
+
+    location ^~ /api/      { root /var/www/html/public; try_files $uri /index.php?$query_string; }
+    location ^~ /webhooks/ { root /var/www/html/public; try_files $uri /index.php?$query_string; }
+    location ^~ /sanctum/  { root /var/www/html/public; try_files $uri /index.php?$query_string; }
+
+    # Product images and admin media. Storage::disk('public') writes to
+    # storage/app/public on the shared storage volume, mounted read-only here.
+    # alias, not root + the public/storage symlink: the entrypoint creates that
+    # link inside the app container only, so through root this 404'd every image.
+    # alias also keeps the rest of the volume (logs, private imports) unservable.
+    location ^~ /storage/ {
+        alias /var/www/html/storage/app/public/;
+        expires 7d;
+        access_log off;
+    }
+
+    location = /up { root /var/www/html/public; try_files $uri /index.php?$query_string; }
+
+    # The staff portal. Without these two blocks the SPA catch-all below would
+    # answer every admin URL with the storefront's index.html and the portal would
+    # look like a broken React route. Exact match for the bare prefix plus a
+    # trailing-slash prefix: `^~ /prefix` alone would also match /prefixevil.
+    location = /${ADMIN_PATH_PREFIX}  { root /var/www/html/public; try_files $uri /index.php?$query_string; }
+    location ^~ /${ADMIN_PATH_PREFIX}/ { root /var/www/html/public; try_files $uri /index.php?$query_string; }
+
+    location = /index.php {
+        root /var/www/html/public;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param DOCUMENT_ROOT $realpath_root;
+        # After real_ip, $remote_addr is the visitor. Give PHP a clean XFF so
+        # TRUSTED_PROXIES matches one address instead of a chain.
+        # REMOTE_ADDR is the real peer (the host proxy, via the Docker bridge),
+        # not the visitor real_ip resolved. Laravel trusts X-Forwarded-* only
+        # from TRUSTED_PROXIES; with the visitor as REMOTE_ADDR it ignored
+        # X-Forwarded-Proto and built http:// admin asset URLs (blocked as mixed
+        # content) as soon as the host proxy sent CF-Connecting-IP. The visitor
+        # goes in X-Forwarded-For, which Laravel reads once it trusts the peer.
+        fastcgi_param REMOTE_ADDR $realip_remote_addr;
+        fastcgi_param HTTP_X_FORWARDED_FOR $remote_addr;
+        fastcgi_param HTTP_X_FORWARDED_PROTO $http_x_forwarded_proto;
+        fastcgi_param HTTP_X_FORWARDED_HOST $http_host;
+        # The incoming header, not this container's own listen port: the app
+        # trusts X-Forwarded-Port for URL generation, and asserting 80 here
+        # would mint https://host:80/... links. Normally absent, in which
+        # case Symfony falls back to the scheme default (443). Matches the
+        # dev gateway, which already passes it through.
+        fastcgi_param HTTP_X_FORWARDED_PORT $http_x_forwarded_port;
+        fastcgi_pass app:9000;
+        # Payment provider returns and webhook posts are all short, but a cold
+        # opcache after a deploy makes the first request slow.
+        fastcgi_read_timeout 120s;
+        fastcgi_buffers 16 16k;
+        fastcgi_buffer_size 32k;
+    }
+
+    # ---- Built assets -------------------------------------------------------
+    # Fingerprinted by Vite on both sides, so they can be cached hard and skipped
+    # on revalidation. index.php and index.html must never be.
+
+    # The admin portal's own build, from the app image.
+    location ^~ /build/ {
+        root /var/www/html/public;
+        access_log off;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # Brand and admin imagery from the app image (login logo, mail headers).
+    # The storefront keeps its images under /assets/, so this prefix cannot
+    # collide with it. Without this block the SPA catch-all answers every
+    # /images/* URL with index.html and the images break silently.
+    location ^~ /images/ {
+        root /var/www/html/public;
+        access_log off;
+        expires 7d;
+        try_files $uri =404;
+    }
+
+    # The storefront's. The React repo should build with `base: '/spa-assets/'` so
+    # these cannot collide with /build/. /assets/ is accepted as well so a build
+    # that forgot the base still serves, rather than 404ing on every chunk.
+    location ^~ /spa-assets/ {
+        access_log off;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    location ^~ /assets/ {
+        access_log off;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # ---- Storefront pages with meta tags -----------------------------------
+    # Home, categories and products are what search engines and link previews
+    # read, and neither runs the SPA's JS. Laravel serves index.html for these
+    # with title, description, canonical, Open Graph and JSON-LD already in
+    # <head> (StorefrontPageController). A regex so it wins over `location /`;
+    # the ^~ prefixes above (api, admin, assets) still never reach it.
+    #
+    # Straight to php-fpm rather than try_files -> /index.php, so the error_page
+    # below applies: if PHP is down or errors, the shopper gets the plain SPA,
+    # which only costs the meta tags. A 404 for an unknown product is Laravel's
+    # (SPA body, real 404 status) and passes through.
+    location ~ ^/(?:|categories|categories/[^/]+|products/[^/]+)$ {
+        root /var/www/html/public;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $realpath_root/index.php;
+        fastcgi_param SCRIPT_NAME /index.php;
+        fastcgi_param DOCUMENT_ROOT $realpath_root;
+        # REMOTE_ADDR is the real peer (the host proxy, via the Docker bridge),
+        # not the visitor real_ip resolved. Laravel trusts X-Forwarded-* only
+        # from TRUSTED_PROXIES; with the visitor as REMOTE_ADDR it ignored
+        # X-Forwarded-Proto and built http:// admin asset URLs (blocked as mixed
+        # content) as soon as the host proxy sent CF-Connecting-IP. The visitor
+        # goes in X-Forwarded-For, which Laravel reads once it trusts the peer.
+        fastcgi_param REMOTE_ADDR $realip_remote_addr;
+        fastcgi_param HTTP_X_FORWARDED_FOR $remote_addr;
+        fastcgi_param HTTP_X_FORWARDED_PROTO $http_x_forwarded_proto;
+        fastcgi_param HTTP_X_FORWARDED_HOST $http_host;
+        fastcgi_param HTTP_X_FORWARDED_PORT $http_x_forwarded_port;
+        fastcgi_pass app:9000;
+        fastcgi_read_timeout 30s;
+        fastcgi_buffers 16 16k;
+        fastcgi_buffer_size 32k;
+        fastcgi_intercept_errors on;
+        error_page 500 502 503 504 = @spa_shell;
+    }
+
+    location @spa_shell {
+        add_header Cache-Control "no-store" always;
+        try_files /index.html =503;
+    }
+
+    # Generated from the live catalogue. No SPA fallback: a robots.txt that is
+    # really index.html is worse than a visible error.
+    location = /sitemap.xml { root /var/www/html/public; try_files $uri /index.php?$query_string; }
+    location = /robots.txt  { root /var/www/html/public; try_files $uri /index.php?$query_string; }
+
+    # ---- Storefront ---------------------------------------------------------
+
+    # No $uri/ in the list on purpose: a request that happened to match a
+    # directory name in the build would resolve to it and get a 403 from
+    # autoindex instead of the SPA. Every unmatched path is a React route.
+    location / {
+        try_files $uri /index.html;
+    }
+
+    # Keep PHP out of any other .php file that might land in the build.
+    location ~ \.php$ {
+        return 404;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}

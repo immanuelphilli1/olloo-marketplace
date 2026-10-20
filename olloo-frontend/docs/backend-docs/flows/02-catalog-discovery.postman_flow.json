@@ -1,0 +1,249 @@
+{
+  "nodes": [
+    {
+      "id": "categories",
+      "type": "http-request",
+      "config": {
+        "title": "List categories",
+        "request": "curl -s -X GET '{{baseUrl}}/categories' -H 'Accept: application/json'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          }
+        ]
+      }
+    },
+    {
+      "id": "category-panel",
+      "type": "http-request",
+      "config": {
+        "title": "Category panel",
+        "request": "curl -s -X GET '{{baseUrl}}/categories/{{categoryRid}}/panel' -H 'Accept: application/json'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          },
+          {
+            "name": "categoryRid",
+            "type": "env",
+            "envId": "NEW_ID:categoryRid"
+          }
+        ]
+      }
+    },
+    {
+      "id": "products",
+      "type": "http-request",
+      "config": {
+        "title": "List products",
+        "request": "curl -s -X GET '{{baseUrl}}/products?page=1&limit=20&categoryId={{categoryRid}}' -H 'Accept: application/json'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          },
+          {
+            "name": "categoryRid",
+            "type": "env",
+            "envId": "NEW_ID:categoryRid"
+          }
+        ]
+      }
+    },
+    {
+      "id": "extract-product",
+      "type": "evaluate-expression",
+      "config": {
+        "title": "Extract productRid",
+        "language": "typescript",
+        "expression": "const r = (body && body.body !== undefined) ? body.body : body; const items = r?.items ?? r?.data?.items ?? (Array.isArray(r?.data) ? r.data : []) ?? []; items[0]?.rid",
+        "blockVariables": [
+          {
+            "name": "body",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "product-detail",
+      "type": "http-request",
+      "config": {
+        "title": "Product detail",
+        "request": "curl -s -X GET '{{baseUrl}}/products/{{productRid}}' -H 'Accept: application/json'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          },
+          {
+            "name": "productRid",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "related",
+      "type": "http-request",
+      "config": {
+        "title": "Related products",
+        "request": "curl -s -X GET '{{baseUrl}}/products/{{productRid}}/related' -H 'Accept: application/json'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          },
+          {
+            "name": "productRid",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "reviews",
+      "type": "http-request",
+      "config": {
+        "title": "Product reviews",
+        "request": "curl -s -X GET '{{baseUrl}}/products/{{productRid}}/reviews?page=1&limit=10' -H 'Accept: application/json'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          },
+          {
+            "name": "productRid",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "suggestions",
+      "type": "http-request",
+      "config": {
+        "title": "Search suggestions",
+        "request": "curl -s -X GET '{{baseUrl}}/search/suggestions?q=aero' -H 'Accept: application/json'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          }
+        ]
+      }
+    },
+    {
+      "id": "search",
+      "type": "http-request",
+      "config": {
+        "title": "Product search",
+        "request": "curl -s -X GET '{{baseUrl}}/products/search?q=earbuds&page=1&limit=20' -H 'Accept: application/json'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          }
+        ]
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source": "categories",
+      "target": "category-panel",
+      "sourcePort": "success",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "category-panel",
+      "target": "products",
+      "sourcePort": "success",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "products",
+      "target": "extract-product",
+      "sourcePort": "success",
+      "targetPort": "body"
+    },
+    {
+      "source": "extract-product",
+      "target": "product-detail",
+      "sourcePort": "value",
+      "targetPort": "productRid"
+    },
+    {
+      "source": "extract-product",
+      "target": "product-detail",
+      "sourcePort": "value",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "product-detail",
+      "target": "related",
+      "sourcePort": "success",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "extract-product",
+      "target": "related",
+      "sourcePort": "value",
+      "targetPort": "productRid"
+    },
+    {
+      "source": "related",
+      "target": "reviews",
+      "sourcePort": "success",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "extract-product",
+      "target": "reviews",
+      "sourcePort": "value",
+      "targetPort": "productRid"
+    },
+    {
+      "source": "reviews",
+      "target": "suggestions",
+      "sourcePort": "success",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "suggestions",
+      "target": "search",
+      "sourcePort": "success",
+      "targetPort": "__trigger__"
+    }
+  ],
+  "environment": [
+    {
+      "id": "NEW_ID:baseUrl",
+      "name": "baseUrl",
+      "description": "HandCO API root (e.g. http://127.0.0.1:8000/api/v1)",
+      "color": "blue",
+      "type": "string"
+    },
+    {
+      "id": "NEW_ID:categoryRid",
+      "name": "categoryRid",
+      "description": "Category rid for catalog browsing (seed default: electronics)",
+      "color": "green",
+      "type": "string"
+    }
+  ]
+}

@@ -1,0 +1,235 @@
+{
+  "nodes": [
+    {
+      "id": "login",
+      "type": "http-request",
+      "config": {
+        "title": "Login",
+        "request": "curl -s -X POST '{{baseUrl}}/auth/login' -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{\"email\":\"demo@handco.test\",\"password\":\"password\"}'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          }
+        ]
+      }
+    },
+    {
+      "id": "extract-access",
+      "type": "evaluate-expression",
+      "config": {
+        "title": "Extract accessToken",
+        "language": "typescript",
+        "expression": "const r = (body && body.body !== undefined) ? body.body : body; r?.accessToken ?? r?.data?.accessToken",
+        "blockVariables": [
+          {
+            "name": "body",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "orders",
+      "type": "http-request",
+      "config": {
+        "title": "List orders",
+        "request": "curl -s -X GET '{{baseUrl}}/orders?status=all&page=1&limit=20' -H 'Accept: application/json' -H 'Authorization: Bearer {{accessToken}}'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          },
+          {
+            "name": "accessToken",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "extract-order",
+      "type": "evaluate-expression",
+      "config": {
+        "title": "Extract orderRid",
+        "language": "typescript",
+        "expression": "const r = (body && body.body !== undefined) ? body.body : body; const items = r?.items ?? r?.orders ?? r?.data?.items ?? r?.data?.orders ?? []; items[0]?.rid ?? items[0]?.id",
+        "blockVariables": [
+          {
+            "name": "body",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "tracking",
+      "type": "http-request",
+      "config": {
+        "title": "Order tracking",
+        "request": "curl -s -X GET '{{baseUrl}}/orders/{{orderRid}}/tracking' -H 'Accept: application/json' -H 'Authorization: Bearer {{accessToken}}'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          },
+          {
+            "name": "accessToken",
+            "type": "port",
+            "path": ""
+          },
+          {
+            "name": "orderRid",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "buy-again",
+      "type": "http-request",
+      "config": {
+        "title": "Buy again",
+        "request": "curl -s -X POST '{{baseUrl}}/orders/{{orderRid}}/buy-again' -H 'Accept: application/json' -H 'Content-Type: application/json' -H 'Authorization: Bearer {{accessToken}}' -d '{}'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          },
+          {
+            "name": "accessToken",
+            "type": "port",
+            "path": ""
+          },
+          {
+            "name": "orderRid",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "return-order",
+      "type": "http-request",
+      "config": {
+        "title": "Request return",
+        "request": "curl -s -X POST '{{baseUrl}}/orders/{{orderRid}}/return' -H 'Accept: application/json' -H 'Content-Type: application/json' -H 'Authorization: Bearer {{accessToken}}' -d '{\"reason\":\"Changed mind\"}'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          },
+          {
+            "name": "accessToken",
+            "type": "port",
+            "path": ""
+          },
+          {
+            "name": "orderRid",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source": "login",
+      "target": "extract-access",
+      "sourcePort": "success",
+      "targetPort": "body"
+    },
+    {
+      "source": "extract-access",
+      "target": "orders",
+      "sourcePort": "value",
+      "targetPort": "accessToken"
+    },
+    {
+      "source": "extract-access",
+      "target": "orders",
+      "sourcePort": "value",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "orders",
+      "target": "extract-order",
+      "sourcePort": "success",
+      "targetPort": "body"
+    },
+    {
+      "source": "extract-order",
+      "target": "tracking",
+      "sourcePort": "value",
+      "targetPort": "orderRid"
+    },
+    {
+      "source": "extract-access",
+      "target": "tracking",
+      "sourcePort": "value",
+      "targetPort": "accessToken"
+    },
+    {
+      "source": "extract-order",
+      "target": "tracking",
+      "sourcePort": "value",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "tracking",
+      "target": "buy-again",
+      "sourcePort": "success",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "extract-access",
+      "target": "buy-again",
+      "sourcePort": "value",
+      "targetPort": "accessToken"
+    },
+    {
+      "source": "extract-order",
+      "target": "buy-again",
+      "sourcePort": "value",
+      "targetPort": "orderRid"
+    },
+    {
+      "source": "buy-again",
+      "target": "return-order",
+      "sourcePort": "success",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "extract-access",
+      "target": "return-order",
+      "sourcePort": "value",
+      "targetPort": "accessToken"
+    },
+    {
+      "source": "extract-order",
+      "target": "return-order",
+      "sourcePort": "value",
+      "targetPort": "orderRid"
+    }
+  ],
+  "environment": [
+    {
+      "id": "NEW_ID:baseUrl",
+      "name": "baseUrl",
+      "description": "HandCO API root (e.g. http://127.0.0.1:8000/api/v1)",
+      "color": "blue",
+      "type": "string"
+    }
+  ]
+}

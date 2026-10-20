@@ -1,0 +1,213 @@
+{
+  "nodes": [
+    {
+      "id": "check-email",
+      "type": "http-request",
+      "config": {
+        "title": "Check email",
+        "request": "curl -s -X POST '{{baseUrl}}/auth/check-email' -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{\"email\":\"demo@handco.test\"}'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          }
+        ]
+      }
+    },
+    {
+      "id": "login",
+      "type": "http-request",
+      "config": {
+        "title": "Login",
+        "request": "curl -s -X POST '{{baseUrl}}/auth/login' -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{\"email\":\"demo@handco.test\",\"password\":\"password\"}'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          }
+        ]
+      }
+    },
+    {
+      "id": "extract-access",
+      "type": "evaluate-expression",
+      "config": {
+        "title": "Extract accessToken",
+        "language": "typescript",
+        "expression": "const r = (body && body.body !== undefined) ? body.body : body; r?.accessToken ?? r?.data?.accessToken",
+        "blockVariables": [
+          {
+            "name": "body",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "extract-refresh",
+      "type": "evaluate-expression",
+      "config": {
+        "title": "Extract refreshToken",
+        "language": "typescript",
+        "expression": "const r = (body && body.body !== undefined) ? body.body : body; r?.refreshToken ?? r?.data?.refreshToken",
+        "blockVariables": [
+          {
+            "name": "body",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "me",
+      "type": "http-request",
+      "config": {
+        "title": "Me",
+        "request": "curl -s -X GET '{{baseUrl}}/auth/me' -H 'Accept: application/json' -H 'Authorization: Bearer {{accessToken}}'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          },
+          {
+            "name": "accessToken",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "refresh",
+      "type": "http-request",
+      "config": {
+        "title": "Refresh",
+        "request": "curl -s -X POST '{{baseUrl}}/auth/refresh' -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{\"refreshToken\":\"{{refreshToken}}\"}'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          },
+          {
+            "name": "refreshToken",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "extract-access-2",
+      "type": "evaluate-expression",
+      "config": {
+        "title": "Extract refreshed accessToken",
+        "language": "typescript",
+        "expression": "const r = (body && body.body !== undefined) ? body.body : body; r?.accessToken ?? r?.data?.accessToken",
+        "blockVariables": [
+          {
+            "name": "body",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "logout",
+      "type": "http-request",
+      "config": {
+        "title": "Logout",
+        "request": "curl -s -X POST '{{baseUrl}}/auth/logout' -H 'Accept: application/json' -H 'Content-Type: application/json' -H 'Authorization: Bearer {{accessToken}}'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          },
+          {
+            "name": "accessToken",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source": "check-email",
+      "target": "login",
+      "sourcePort": "success",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "login",
+      "target": "extract-access",
+      "sourcePort": "success",
+      "targetPort": "body"
+    },
+    {
+      "source": "login",
+      "target": "extract-refresh",
+      "sourcePort": "success",
+      "targetPort": "body"
+    },
+    {
+      "source": "extract-access",
+      "target": "me",
+      "sourcePort": "value",
+      "targetPort": "accessToken"
+    },
+    {
+      "source": "extract-access",
+      "target": "me",
+      "sourcePort": "value",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "extract-refresh",
+      "target": "refresh",
+      "sourcePort": "value",
+      "targetPort": "refreshToken"
+    },
+    {
+      "source": "me",
+      "target": "refresh",
+      "sourcePort": "success",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "refresh",
+      "target": "extract-access-2",
+      "sourcePort": "success",
+      "targetPort": "body"
+    },
+    {
+      "source": "extract-access-2",
+      "target": "logout",
+      "sourcePort": "value",
+      "targetPort": "accessToken"
+    },
+    {
+      "source": "extract-access-2",
+      "target": "logout",
+      "sourcePort": "value",
+      "targetPort": "__trigger__"
+    }
+  ],
+  "environment": [
+    {
+      "id": "NEW_ID:baseUrl",
+      "name": "baseUrl",
+      "description": "HandCO API root (e.g. http://127.0.0.1:8000/api/v1)",
+      "color": "blue",
+      "type": "string"
+    }
+  ]
+}

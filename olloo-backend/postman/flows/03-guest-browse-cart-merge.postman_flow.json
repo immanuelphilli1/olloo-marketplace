@@ -1,0 +1,247 @@
+{
+  "nodes": [
+    {
+      "id": "products",
+      "type": "http-request",
+      "config": {
+        "title": "List products",
+        "request": "curl -s -X GET '{{baseUrl}}/products?page=1&limit=20&categoryId={{categoryRid}}' -H 'Accept: application/json'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          },
+          {
+            "name": "categoryRid",
+            "type": "env",
+            "envId": "NEW_ID:categoryRid"
+          }
+        ]
+      }
+    },
+    {
+      "id": "extract-product",
+      "type": "evaluate-expression",
+      "config": {
+        "title": "Extract productRid",
+        "language": "typescript",
+        "expression": "const r = (body && body.body !== undefined) ? body.body : body; const items = r?.items ?? r?.data?.items ?? (Array.isArray(r?.data) ? r.data : []) ?? []; items[0]?.rid",
+        "blockVariables": [
+          {
+            "name": "body",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "add-item",
+      "type": "http-request",
+      "config": {
+        "title": "Add cart item (guest)",
+        "request": "curl -s -X POST '{{baseUrl}}/cart/items' -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{\"productId\":\"{{productRid}}\",\"quantity\":1}'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          },
+          {
+            "name": "productRid",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "extract-cart",
+      "type": "evaluate-expression",
+      "config": {
+        "title": "Extract cartRid",
+        "language": "typescript",
+        "expression": "const headers = body?.headers ?? {}; const h = headers['X-Cart-Id'] ?? headers['x-cart-id'] ?? (typeof headers.get === 'function' ? headers.get('X-Cart-Id') : undefined); if (h) h; else { const r = (body && body.body !== undefined) ? body.body : body; r?.cartRid ?? r?.rid ?? ''; }",
+        "blockVariables": [
+          {
+            "name": "body",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "login",
+      "type": "http-request",
+      "config": {
+        "title": "Login",
+        "request": "curl -s -X POST '{{baseUrl}}/auth/login' -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{\"email\":\"demo@handco.test\",\"password\":\"password\"}'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          }
+        ]
+      }
+    },
+    {
+      "id": "extract-access",
+      "type": "evaluate-expression",
+      "config": {
+        "title": "Extract accessToken",
+        "language": "typescript",
+        "expression": "const r = (body && body.body !== undefined) ? body.body : body; r?.accessToken ?? r?.data?.accessToken",
+        "blockVariables": [
+          {
+            "name": "body",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "merge",
+      "type": "http-request",
+      "config": {
+        "title": "Merge guest cart",
+        "request": "curl -s -X POST '{{baseUrl}}/cart/merge' -H 'Accept: application/json' -H 'Content-Type: application/json' -H 'Authorization: Bearer {{accessToken}}' -H 'X-Cart-Id: {{cartRid}}' -d '{}'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          },
+          {
+            "name": "accessToken",
+            "type": "port",
+            "path": ""
+          },
+          {
+            "name": "cartRid",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "get-cart",
+      "type": "http-request",
+      "config": {
+        "title": "Get cart",
+        "request": "curl -s -X GET '{{baseUrl}}/cart' -H 'Accept: application/json' -H 'X-Cart-Id: {{cartRid}}' -H 'Authorization: Bearer {{accessToken}}'",
+        "blockVariables": [
+          {
+            "name": "baseUrl",
+            "type": "env",
+            "envId": "NEW_ID:baseUrl"
+          },
+          {
+            "name": "cartRid",
+            "type": "port",
+            "path": ""
+          },
+          {
+            "name": "accessToken",
+            "type": "port",
+            "path": ""
+          }
+        ]
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source": "products",
+      "target": "extract-product",
+      "sourcePort": "success",
+      "targetPort": "body"
+    },
+    {
+      "source": "extract-product",
+      "target": "add-item",
+      "sourcePort": "value",
+      "targetPort": "productRid"
+    },
+    {
+      "source": "extract-product",
+      "target": "add-item",
+      "sourcePort": "value",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "add-item",
+      "target": "extract-cart",
+      "sourcePort": "success",
+      "targetPort": "body"
+    },
+    {
+      "source": "extract-cart",
+      "target": "login",
+      "sourcePort": "value",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "login",
+      "target": "extract-access",
+      "sourcePort": "success",
+      "targetPort": "body"
+    },
+    {
+      "source": "extract-access",
+      "target": "merge",
+      "sourcePort": "value",
+      "targetPort": "accessToken"
+    },
+    {
+      "source": "extract-cart",
+      "target": "merge",
+      "sourcePort": "value",
+      "targetPort": "cartRid"
+    },
+    {
+      "source": "extract-access",
+      "target": "merge",
+      "sourcePort": "value",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "merge",
+      "target": "get-cart",
+      "sourcePort": "success",
+      "targetPort": "__trigger__"
+    },
+    {
+      "source": "extract-access",
+      "target": "get-cart",
+      "sourcePort": "value",
+      "targetPort": "accessToken"
+    },
+    {
+      "source": "extract-cart",
+      "target": "get-cart",
+      "sourcePort": "value",
+      "targetPort": "cartRid"
+    }
+  ],
+  "environment": [
+    {
+      "id": "NEW_ID:baseUrl",
+      "name": "baseUrl",
+      "description": "HandCO API root (e.g. http://127.0.0.1:8000/api/v1)",
+      "color": "blue",
+      "type": "string"
+    },
+    {
+      "id": "NEW_ID:categoryRid",
+      "name": "categoryRid",
+      "description": "Category rid for catalog browsing (seed default: electronics)",
+      "color": "green",
+      "type": "string"
+    }
+  ]
+}

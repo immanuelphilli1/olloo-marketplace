@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+we should always used named routes instead of raw urls. If while making changes to any piece of code, you discover a raw url, try see if you can change it to a named route instead. You are free to name the route where it is defined, if it is not already named. You can also list all routes with php artisan route:list

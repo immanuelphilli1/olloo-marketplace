@@ -1,0 +1,20 @@
+---
+description: Enforce rid-only identifiers on all client-facing interfaces (API, admin, Postman)
+---
+
+# Client-facing rids only
+
+**Goal:** Never expose or accept numeric database `id` values on client-facing surfaces.
+
+## Rules
+
+1. Public models use `HasRid`; route keys are `rid`.
+2. API JSON and Inertia props emit `rid`, never numeric `id` (`$hidden` includes `id`).
+3. Path params and request bodies reference related records by rid (`productId` in the frontend spec means the product rid string).
+4. Guest cart header/cookie `X-Cart-Id` holds the cart rid.
+5. Postman examples and variables use rids only.
+6. Internal FKs may remain numeric `*_id` in the database.
+
+## What did not work
+
+- Exposing autoincrement ids "just for admin" leaks the same identifiers into Ziggy/Inertia and Postman.

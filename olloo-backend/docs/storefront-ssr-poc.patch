@@ -1,0 +1,371 @@
+diff --git a/package.json b/package.json
+index 482d920..922fd84 100644
+--- a/package.json
++++ b/package.json
+@@ -7,7 +7,9 @@
+     "dev": "vite",
+     "build": "tsc -b && vite build",
+     "lint": "eslint .",
+-    "preview": "vite preview"
++    "preview": "vite preview",
++    "build:ssr": "tsc -b && vite build --outDir dist/client && vite build --ssr src/entry-server.tsx --outDir dist/server",
++    "start:ssr": "node server/ssr.mjs"
+   },
+   "dependencies": {
+     "@tailwindcss/vite": "^4.3.3",
+diff --git a/server/ssr.mjs b/server/ssr.mjs
+new file mode 100644
+index 0000000..7d4c92e
+--- /dev/null
++++ b/server/ssr.mjs
+@@ -0,0 +1,132 @@
++// SSR server for the storefront. Node built-ins only, no framework.
++//
++//   node server/ssr.mjs        (after `npm run build:ssr`)
++//
++// Env:
++//   PORT              listen port (default 5180)
++//   SSR_API_BASE_URL  API base the server calls, e.g. http://app/api/v1 inside
++//                     Docker. Server to server: never the public URL if a
++//                     private one exists.
++//
++// Server-rendered routes: /products/:rid (proof of concept). Every other path
++// gets the plain SPA shell, exactly as nginx serves it today. Any SSR failure
++// also falls back to the plain shell, so SSR can cost speed, never the page.
++import { createServer } from 'node:http'
++import { readFile, stat } from 'node:fs/promises'
++import { extname, join, normalize } from 'node:path'
++import { fileURLToPath } from 'node:url'
++
++const root = fileURLToPath(new URL('../dist/', import.meta.url))
++const clientDir = join(root, 'client')
++const PORT = Number(process.env.PORT ?? 5180)
++const API = (process.env.SSR_API_BASE_URL ?? '').replace(/\/$/, '')
++if (!/^https?:\/\//.test(API)) {
++  throw new Error('SSR_API_BASE_URL must be an absolute http(s) URL, for example http://app/api/v1')
++}
++
++const template = await readFile(join(clientDir, 'index.html'), 'utf8')
++if (!template.includes('<div id="root"></div>') || !template.includes('</head>')) {
++  throw new Error('dist/client/index.html needs <div id="root"></div> and </head>')
++}
++const { render } = await import(join(root, 'server', 'entry-server.js'))
++
++const TYPES = {
++  '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png',
++  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon',
++  '.mp4': 'video/mp4', '.json': 'application/json', '.woff2': 'font/woff2', '.txt': 'text/plain',
++}
++
++async function api(path, clientIp) {
++  // ponytail: no timeout tuning or retries; a slow API means the plain shell after 3 s.
++  const response = await fetch(`${API}${path}`, {
++    headers: { Accept: 'application/json', 'X-Forwarded-For': clientIp },
++    signal: AbortSignal.timeout(3000),
++  })
++  return { status: response.status, body: response.ok ? await response.json() : null }
++}
++
++/** Escapes text for HTML attributes and text nodes. */
++const esc = (value) =>
++  String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
++
++/** JSON safe inside <script>: no "</script>", no "<!--". */
++const scriptJson = (value) => JSON.stringify(value).replace(/</g, '\\u003c')
++
++/** Same tags the Laravel StorefrontPageController writes, from GET /seo. */
++function headTags(meta) {
++  const tag = (attr, key, value) => (value ? `<meta ${attr}="${key}" content="${esc(value)}" data-seo>` : '')
++  return [
++    `<title data-seo>${esc(meta.title)}</title>`,
++    tag('name', 'description', meta.description),
++    tag('name', 'robots', meta.robots),
++    `<link rel="canonical" href="${esc(meta.canonical)}" data-seo>`,
++    tag('property', 'og:type', meta.type),
++    tag('property', 'og:title', meta.title),
++    tag('property', 'og:description', meta.description),
++    tag('property', 'og:url', meta.canonical),
++    tag('property', 'og:image', meta.image),
++    tag('name', 'twitter:card', meta.image ? 'summary_large_image' : 'summary'),
++    ...meta.jsonLd.map((data) => `<script type="application/ld+json" data-seo>${scriptJson(data)}</script>`),
++  ].join('\n')
++}
++
++function page({ head = '', appHtml = '', initialData }) {
++  let html = template
++  if (head) {
++    html = html.replace(/<title\b[^>]*>[\s\S]*?<\/title>\s*/i, '')
++    html = html.replace(/<meta\s[^>]*name="description"[^>]*>\s*/i, '')
++    html = html.replace('</head>', () => `${head}\n</head>`)
++  }
++  if (appHtml) {
++    const data = `<script>window.__HANDCO_INITIAL_DATA__=${scriptJson(initialData)}</script>`
++    // Functions, not strings: a "$&" in a product name must not become a regex token.
++    html = html.replace('<div id="root"></div>', () => `<div id="root">${appHtml}</div>${data}`)
++  }
++  return html
++}
++
++async function renderProduct(url, rid, clientIp) {
++  const [detail, seo] = await Promise.all([
++    api(`/products/${encodeURIComponent(rid)}`, clientIp),
++    api(`/seo?path=${encodeURIComponent(new URL(url, 'http://x').pathname)}`, clientIp),
++  ])
++  const head = seo.body ? headTags(seo.body) : ''
++  if (!detail.body) {
++    // Unknown product: real 404 status, plain shell; the app shows its own screen.
++    return { status: detail.status === 404 ? 404 : 502, html: page({ head }) }
++  }
++  const initialData = { product: { rid, response: detail.body } }
++  return { status: 200, html: page({ head, appHtml: render(url, initialData), initialData }) }
++}
++
++async function serveStatic(pathname, res) {
++  const file = normalize(join(clientDir, decodeURIComponent(pathname)))
++  if (!file.startsWith(clientDir) || pathname === '/' || pathname.endsWith('.html')) return false
++  const info = await stat(file).catch(() => null)
++  if (!info?.isFile()) return false
++  res.writeHead(200, {
++    'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream',
++    'Cache-Control': pathname.startsWith('/assets/') ? 'public, max-age=31536000, immutable' : 'public, max-age=3600',
++  })
++  res.end(await readFile(file))
++  return true
++}
++
++createServer(async (req, res) => {
++  const url = req.url ?? '/'
++  const { pathname } = new URL(url, 'http://x')
++  const clientIp = String(req.headers['x-forwarded-for'] ?? req.socket.remoteAddress ?? '').split(',')[0].trim()
++  try {
++    if (await serveStatic(pathname, res)) return
++
++    const product = pathname.match(/^\/products\/([^/]+)$/)
++    const result = product ? await renderProduct(url, decodeURIComponent(product[1]), clientIp) : null
++
++    res.writeHead(result?.status ?? 200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' })
++    res.end(result?.html ?? template)
++  } catch (error) {
++    console.error(`[ssr] ${pathname}:`, error)
++    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' })
++    res.end(template)
++  }
++}).listen(PORT, () => console.log(`[ssr] listening on :${PORT}, API ${API}`))
+diff --git a/src/App.tsx b/src/App.tsx
+index 3d3af91..315ff22 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -54,17 +54,24 @@ function AppRoutes() {
+   )
+ }
+ 
++/** Everything inside the router. The browser wraps it in BrowserRouter, the SSR server in StaticRouter. */
++export function AppShell() {
++  return (
++    <AuthProvider>
++      <CatalogProvider>
++      <ShopProvider>
++        <ScrollToTop />
++        <AppRoutes />
++      </ShopProvider>
++      </CatalogProvider>
++    </AuthProvider>
++  )
++}
++
+ function App() {
+   return (
+     <BrowserRouter>
+-      <AuthProvider>
+-        <CatalogProvider>
+-        <ShopProvider>
+-          <ScrollToTop />
+-          <AppRoutes />
+-        </ShopProvider>
+-        </CatalogProvider>
+-      </AuthProvider>
++      <AppShell />
+     </BrowserRouter>
+   )
+ }
+diff --git a/src/components/ProductDetailView.tsx b/src/components/ProductDetailView.tsx
+index b71d79f..b1626e4 100644
+--- a/src/components/ProductDetailView.tsx
++++ b/src/components/ProductDetailView.tsx
+@@ -599,6 +599,13 @@ export function ProductDetailView({
+   const [reviews, setReviews] = useState<ProductReview[]>(detail.reviews)
+ 
+   const isLiked = isProductLiked(product.id)
++
++  // The server writes the full <head> on the first load. After an in-app
++  // navigation only the tab title needs to follow; crawlers always load fresh.
++  useEffect(() => {
++    document.title = `${product.name} | H&CO.`
++  }, [product.name])
++
+   // Related cards show delivery quotes, which need a known destination.
+   const { country } = useProductDestination()
+ 
+diff --git a/src/entry-server.tsx b/src/entry-server.tsx
+new file mode 100644
+index 0000000..f9c0ae9
+--- /dev/null
++++ b/src/entry-server.tsx
+@@ -0,0 +1,18 @@
++import { StrictMode } from 'react'
++import { renderToString } from 'react-dom/server'
++import { StaticRouter } from 'react-router-dom'
++import { AppShell } from './App'
++import { InitialDataContext, type InitialData } from './ssr/initialData'
++
++/** Called by server/ssr.mjs for each SSR route. Pure: no fetching here. */
++export function render(url: string, initialData: InitialData): string {
++  return renderToString(
++    <StrictMode>
++      <InitialDataContext.Provider value={initialData}>
++        <StaticRouter location={url}>
++          <AppShell />
++        </StaticRouter>
++      </InitialDataContext.Provider>
++    </StrictMode>,
++  )
++}
+diff --git a/src/main.tsx b/src/main.tsx
+index df80084..164a5c8 100644
+--- a/src/main.tsx
++++ b/src/main.tsx
+@@ -1,7 +1,8 @@
+ import { StrictMode, useEffect } from 'react'
+-import { createRoot } from 'react-dom/client'
++import { createRoot, hydrateRoot } from 'react-dom/client'
+ import './index.css'
+ import App from './App.tsx'
++import { InitialDataContext } from './ssr/initialData.ts'
+ import { setupViewportReset } from './utils/viewport.ts'
+ 
+ function Root() {
+@@ -10,8 +11,20 @@ function Root() {
+   return <App />
+ }
+ 
+-createRoot(document.getElementById('root')!).render(
++const container = document.getElementById('root')!
++const initialData = window.__HANDCO_INITIAL_DATA__ ?? {}
++const app = (
+   <StrictMode>
+-    <Root />
+-  </StrictMode>,
++    <InitialDataContext.Provider value={initialData}>
++      <Root />
++    </InitialDataContext.Provider>
++  </StrictMode>
+ )
++
++// Server-rendered pages arrive with markup inside #root: attach to it instead of
++// replacing it. Every other route (and an SSR fallback) gets an empty #root.
++if (container.hasChildNodes()) {
++  hydrateRoot(container, app)
++} else {
++  createRoot(container).render(app)
++}
+diff --git a/src/pages/HomePage.tsx b/src/pages/HomePage.tsx
+index 6527f64..7900c3f 100644
+--- a/src/pages/HomePage.tsx
++++ b/src/pages/HomePage.tsx
+@@ -26,6 +26,7 @@ import { AddAddressRequiredModal } from '../components/AddAddressRequiredModal'
+ import { PaymentErrorModal } from '../components/PaymentErrorModal'
+ import { PaymentRedirectOverlay } from '../components/PaymentRedirectOverlay'
+ import { OrderCompletedView } from '../components/OrderCompletedView'
++import { useInitialData } from '../ssr/initialData'
+ import { PaymentReturnView } from '../components/PaymentReturnView'
+ import { WishlistView } from '../components/WishlistView'
+ import { SearchResultsView } from '../components/SearchResultsView'
+@@ -96,7 +97,28 @@ export function HomePage() {
+   const navigate = useNavigate()
+   const params = useParams()
+   const [searchParams] = useSearchParams()
+-  const [productDetail, setProductDetail] = useState<ProductDetailContext | null>(null)
++  const initialData = useInitialData()
++  const initialProductId = location.pathname.startsWith('/products/') ? params.productId : undefined
++  const ssrProduct = initialData.product?.rid === initialProductId ? initialData.product : undefined
++  // SSR: start from the product the server fetched, so the first browser render
++  // is the server's HTML. `categories` is [] on the server and on the first
++  // client render alike, so the selection matches too.
++  const [productDetail, setProductDetail] = useState<ProductDetailContext | null>(() =>
++    ssrProduct
++      ? mapApiProductDetail(
++          ssrProduct.response,
++          buildSelectionForProduct(
++            mapApiProduct(ssrProduct.response.product),
++            searchParams.get('from'),
++            searchParams.get('category'),
++            searchParams.get('subcategory'),
++            categories,
++          ),
++        )
++      : null,
++  )
++  /** Skips the first fetch when SSR already supplied this product. */
++  const skipNextProductFetchRef = useRef(ssrProduct !== undefined)
+   const [isProductLoading, setIsProductLoading] = useState(false)
+   const [isStartingPayment, setIsStartingPayment] = useState(false)
+   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+@@ -180,6 +202,12 @@ export function HomePage() {
+       return
+     }
+ 
++    if (skipNextProductFetchRef.current) {
++      skipNextProductFetchRef.current = false
++      void accountApi.recordBrowsingHistory(productId).catch(() => undefined)
++      return
++    }
++
+     let cancelled = false
+     setIsProductLoading(true)
+ 
+diff --git a/src/ssr/initialData.ts b/src/ssr/initialData.ts
+new file mode 100644
+index 0000000..0aa3b90
+--- /dev/null
++++ b/src/ssr/initialData.ts
+@@ -0,0 +1,23 @@
++import { createContext, useContext } from 'react'
++import type { ApiProductDetailResponse } from '../api/types'
++
++/**
++ * Data the SSR server fetched before it rendered the page. The browser reads
++ * the same object back from `window.__HANDCO_INITIAL_DATA__`, so its first
++ * render matches the server HTML and hydration needs no refetch.
++ */
++export type InitialData = {
++  product?: { rid: string; response: ApiProductDetailResponse }
++}
++
++declare global {
++  interface Window {
++    __HANDCO_INITIAL_DATA__?: InitialData
++  }
++}
++
++export const InitialDataContext = createContext<InitialData>({})
++
++export function useInitialData(): InitialData {
++  return useContext(InitialDataContext)
++}
+diff --git a/vite.config.ts b/vite.config.ts
+index 92353b8..7597ad1 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -3,6 +3,10 @@ import { defineConfig } from 'vite'
+ import tailwindcss from '@tailwindcss/vite'
+ 
+ // https://vite.dev/config/
+-export default defineConfig({
++export default defineConfig(({ isSsrBuild }) => ({
+   plugins: [react(), tailwindcss()],
+-})
++  // SSR build (dist/server): bundle every dependency into entry-server.js so the
++  // server runs with no node_modules, and skip public/, which dist/client has.
++  ssr: { noExternal: true },
++  build: { copyPublicDir: !isSsrBuild },
++}))

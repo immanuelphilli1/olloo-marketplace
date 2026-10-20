@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 32" width="40" height="32" fill="none">
+  <title>Mobile Money</title>
+  <rect x="10" y="3" width="20" height="26" rx="3" stroke="#1A1A1A" stroke-width="2" />
+  <path d="M15 24h10" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" />
+  <path
+    d="M6.5 13.5C5.12 14.9 4.33 16.85 4.33 19s.79 4.1 2.17 5.5"
+    stroke="#1A1A1A"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+  <path
+    d="M33.5 13.5c1.38 1.4 2.17 3.35 2.17 5.5s-.79 4.1-2.17 5.5"
+    stroke="#1A1A1A"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+</svg>

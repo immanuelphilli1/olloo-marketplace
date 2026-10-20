@@ -1,0 +1,47 @@
+---
+description: >-
+  Consolidate-migrations must not rename migration files once any env has run
+  them. Use when migrate fails with Table already exists after consolidate, or
+  when tempted to rename create_* migrations for neatness.
+---
+
+# Consolidate rename breaks migrate history
+
+**Goal:** Unblock deploy after consolidate renamed a create migration, and avoid repeating it.
+
+## Cause
+
+Laravel records migrations by **filename**. Renaming
+`2026_09_12_000001_create_organization_payment_methods_and_payment_metadata`
+to
+`2026_09_12_000001_create_organization_payment_methods_table`
+leaves the old name in prod `migrations` and treats the new name as pending.
+`Schema::create` then hits `SQLSTATE[42S01] Table already exists`.
+
+## Fix (verified pattern)
+
+Make the renamed create idempotent so the new filename can mark itself ran:
+
+```php
+if (Schema::hasTable('organization_payment_methods')) {
+    return;
+}
+Schema::create('organization_payment_methods', ...);
+```
+
+Do **not** rely on renaming the file back if some environments may already have the new name recorded.
+
+## Hard rules for consolidate skill
+
+The full procedure lives in `.cursor/skills/consolidate-migrations/SKILL.md` (mirrored at
+`~/.cursor/skills/consolidate-migrations/SKILL.md`).
+
+1. Never rename migration files that may exist in any `migrations` table.
+2. Never tidy mixed-file names after stripping a `Schema::table` block.
+3. Never consolidate once production depends on migration history (warn and stop).
+4. Deleting an alter only helps fresh installs; existing DBs never re-run the create.
+
+## What didn't work
+
+- Assuming `migrate:fresh` local success means prod is safe (prod keeps old filenames in history).
+- Renaming for cleaner names while keeping the same timestamp prefix.

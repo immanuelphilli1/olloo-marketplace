@@ -1,0 +1,6 @@
+---
+description: Test storefront SSR, hydration and the production Apache routing locally before a deploy. Use when changing server/ssr.mjs, the storefront Dockerfile/deploy.yml, docker/host-apache/handco.conf or release.sh's proxy.conf.
+alwaysApply: false
+---
+
+Follow `.claude/skills/storefront-ssr-local-test/SKILL.md`. Key gotchas: run the API with `php -S` from `public/` (not `artisan serve`, which drops env vars not in `.env`); the SSR server must render `pathname + search` or links with `?from=home` fail hydration (React #418); `/seo` returns JSON fields; never `echo "$PAGE" | grep -q` under pipefail (SIGPIPE), use a here-string; `sed -i` breaks Docker file bind mounts.

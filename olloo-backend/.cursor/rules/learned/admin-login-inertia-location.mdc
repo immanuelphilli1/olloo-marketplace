@@ -1,0 +1,20 @@
+---
+description: Admin login must full-reload so Ziggy picks up staff admin.* routes
+---
+
+# Admin login full page reload for Ziggy
+
+**Goal:** Avoid `Ziggy error: route 'admin.*' is not in the route list` after signing into the superadmin panel.
+
+## Steps
+1. `AdminZiggy` omits `admin.*` for guests. Login blade therefore ships a Ziggy map without staff routes.
+2. After password auth, return `Inertia::location(...)` (see `AdminAuthController`) so the browser does a real navigation and blade rebuilds Ziggy with the staff session.
+3. Same for logout back to login.
+4. Regression: `php artisan test --filter=AdminDashboardShellTest`.
+
+## Gotchas
+- Plain `redirect()` after an Inertia login POST is followed as an XHR visit; `window.Ziggy` stays guest-filtered.
+- Non-Inertia test posts still get a normal redirect from `Inertia::location()` (assertRedirect keeps working).
+
+## What didn't work
+- Syncing `globalThis.Ziggy` from Inertia props on every render (heavier than a full reload at the auth boundary).

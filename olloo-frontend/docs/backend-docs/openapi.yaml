@@ -1,0 +1,3455 @@
+openapi: 3.0.3
+info:
+  title: HandCO Storefront API
+  version: 1.0.0
+  license:
+    name: Proprietary
+    url: https://handco.example/terms
+  description: |
+    Machine-readable contract for the HandCO storefront API. This file is the
+    source of truth for parameter meanings; docs/API.md is the human companion.
+
+    Conventions:
+    * Identifiers. Public resources are addressed by `rid` (an opaque string,
+      e.g. `p_abc123`). There is no parallel `id` field anywhere in the API.
+      A few `id` fields that are NOT resource identifiers remain and are
+      documented as such: `NotificationSetting.id` (enum key
+      promotions|orderUpdates), the browsing-history bucket id
+      (today|yesterday|older), the mobile-money network id (mtn,
+      vodafone_cash, ...), and `facets` keys.
+    * Money. Every amount is a `Money` object: `{ amount, currency }` where
+      `amount` is in MAJOR units as a JSON number (179 = AED 179.00). Storage
+      and provider calls use minor units internally; only the wire format is
+      major units. Format client-side, never re-parse the currency string.
+    * Dates. All timestamps are ISO 8601 strings; the API sends no
+      pre-formatted date or display strings. The client formats money and dates.
+    * Errors. The `Error` envelope, except plain framework 404s on inactive
+      catalog rows.
+servers:
+  - url: https://api.handco.example
+    description: Configure per environment (VITE_API_BASE_URL).
+security: []
+tags:
+  - name: Auth
+    description: Email-first sign-in, registration, password reset, Google OAuth.
+  - name: Catalog
+    description: Products, categories, product detail, facets, and geo lookups.
+  - name: Search
+    description: Autocomplete suggestions.
+  - name: Cart
+    description: Guest or signed-in cart lines, quantities, and selection.
+  - name: Checkout
+    description: Preview, shipping quote, payment methods, and payment intent.
+  - name: Orders
+    description: Order placement, list, detail, tracking, and returns.
+  - name: Payments
+    description: Payment status polling for a placed order.
+  - name: Reviews
+    description: Product reviews, moderation state, and review eligibility.
+  - name: Wishlist
+    description: Wishlist lines and their categories.
+  - name: Account
+    description: Profile, browsing history, newsletter, 2FA, saved payment methods, notifications.
+  - name: Addresses
+    description: Address book plus country, region, and city lookups.
+  - name: Content
+    description: Static content pages, home payload, and footer payload.
+  - name: Webhooks
+    description: Server-to-server provider callbacks. Never called by clients.
+paths:
+  /v1/auth/check-email:
+    post:
+      operationId: postAuthCheckEmail
+      tags: [Auth]
+      summary: Email-first sign-in step
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Account email. Existence is disclosed by design (nextStep tells the client which screen to show).
+      responses:
+        '200':
+          description: Next step for this email.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [exists, nextStep]
+                properties:
+                  exists: { type: boolean }
+                  nextStep:
+                    type: string
+                    enum: [register, password, oauth]
+                    description: register (new account) | password (login form) | oauth (account has no password, redirect to provider).
+                  oauthProvider:
+                    type: string
+                    example: google
+                    description: Present only when nextStep is oauth.
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /v1/auth/register:
+    post:
+      operationId: postAuthRegister
+      tags: [Auth]
+      summary: Create account
+      description: Merges the guest cart from X-Cart-Id into the new user cart.
+      parameters:
+        - $ref: '#/components/parameters/CartId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, password_confirmation, fullName]
+              properties:
+                email: { type: string, format: email, description: Must be unique among live accounts (soft-deleted owners free theirs). }
+                password: { type: string, description: Laravel default strength rules. }
+                password_confirmation: { type: string, description: Must match password (confirmed rule). }
+                fullName: { type: string, maxLength: 120 }
+                displayName: { type: string, maxLength: 60, description: Optional short name; defaults to first word of fullName. }
+      responses:
+        '201':
+          description: Account created and logged in.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthTokens' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /v1/auth/login:
+    post:
+      operationId: postAuthLogin
+      tags: [Auth]
+      summary: Email and password login
+      description: Merges the guest cart from X-Cart-Id into the user cart.
+      parameters:
+        - $ref: '#/components/parameters/CartId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Logged in.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthTokens' }
+        '422':
+          description: Wrong credentials (ValidationException on field email) or bad input.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/auth/oauth/{provider}/url:
+    get:
+      operationId: getAuthOauthProviderUrl
+      tags: [Auth]
+      summary: Get provider consent URL
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema: { type: string, enum: [google] }
+          description: Only google is supported.
+      responses:
+        '200':
+          description: Redirect the browser to url; keep state and send it back with the code.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url, state]
+                properties:
+                  url: { type: string, description: Provider consent URL. }
+                  state: { type: string, description: 'Encrypted single-use state, valid 10 minutes.'}
+        '422':
+          description: unsupported_provider.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/auth/oauth/{provider}:
+    post:
+      operationId: postAuthOauthProvider
+      tags: [Auth]
+      summary: Exchange provider code for tokens
+      description: Called from the web client callback page with the code and state the provider appended.
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema: { type: string, enum: [google] }
+        - $ref: '#/components/parameters/CartId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, state]
+              properties:
+                code: { type: string, description: Authorization code from the provider. }
+                state: { type: string, description: State issued by oauth url endpoint. }
+      responses:
+        '200':
+          description: Logged in (new account created with verified email when needed).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthTokens' }
+        '401':
+          description: oauth_failed (bad or expired code).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: oauth_account_conflict (email belongs to another sign-in method).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: unsupported_provider, oauth_invalid_state, or oauth_email_unverified (Google email not verified; user must verify at Google first).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/auth/me:
+    get:
+      operationId: getAuthMe
+      tags: [Auth]
+      summary: Current user
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Authenticated user.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user: { $ref: '#/components/schemas/AuthUser' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/auth/logout:
+    post:
+      operationId: postAuthLogout
+      tags: [Auth]
+      summary: End session
+      description: Revokes the current access token only; other sessions stay alive.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Logged out.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success: { type: boolean, example: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/auth/refresh:
+    post:
+      operationId: postAuthRefresh
+      tags: [Auth]
+      summary: Refresh access token
+      description: Rotates refresh tokens (old refresh revoked, old access tokens deleted).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string, description: Refresh token from login/register. Single use. }
+      responses:
+        '200':
+          description: Fresh token pair.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthTokens' }
+        '401':
+          description: Invalid, expired, or revoked refresh token (plain 401, not the error envelope).
+          content:
+            application/json:
+              schema: { type: object }
+  /v1/auth/forgot-password:
+    post:
+      operationId: postAuthForgotPassword
+      tags: [Auth]
+      summary: Request password reset
+      description: Always succeeds (anti-enumeration); email only sent when the address exists.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200':
+          description: Accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message: { type: string, example: 'If that email exists, a reset link has been sent.'}
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /v1/auth/reset-password:
+    post:
+      operationId: postAuthResetPassword
+      tags: [Auth]
+      summary: Reset password with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, token, password, password_confirmation]
+              properties:
+                email: { type: string, format: email }
+                token: { type: string, description: Token from the reset email. }
+                password: { type: string }
+                password_confirmation: { type: string }
+      responses:
+        '200':
+          description: Password reset.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message: { type: string, example: Password has been reset. }
+        '422':
+          description: reset_failed on bad or expired token.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/categories:
+    get:
+      operationId: getCategories
+      tags: [Catalog]
+      summary: Full category tree
+      parameters:
+        - $ref: '#/components/parameters/Depth'
+      responses:
+        '200':
+          description: Category tree for nav and menus.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [categories]
+                properties:
+                  categories:
+                    type: array
+                    items: { $ref: '#/components/schemas/CategoryNode' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /v1/categories/{category}:
+    get:
+      operationId: getCategoriesCategory
+      tags: [Catalog]
+      summary: Single category
+      parameters:
+        - name: category
+          in: path
+          required: true
+          schema: { type: string }
+          description: Category rid first, then slug.
+        - $ref: '#/components/parameters/Depth'
+      responses:
+        '200':
+          description: Category node (no wrapper).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CategoryNode' }
+        '404':
+          description: Plain framework 404 (not the error envelope) when missing or inactive.
+  /v1/categories/{category}/panel:
+    get:
+      operationId: getCategoriesCategoryPanel
+      tags: [Catalog]
+      summary: Category modal panel
+      parameters:
+        - name: category
+          in: path
+          required: true
+          schema: { type: string }
+          description: Category rid first, then slug.
+        - $ref: '#/components/parameters/Depth'
+      responses:
+        '200':
+          description: Panel with parent, children, and sections (sections[0] mirrors children).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CategoryPanel' }
+        '404':
+          description: Plain framework 404 when missing or inactive.
+  /v1/products:
+    get:
+      operationId: getProducts
+      tags: [Catalog]
+      summary: 'Filtered product listing (canonical search: use q)'
+      parameters:
+        - $ref: '#/components/parameters/Country'
+        - name: categoryId
+          in: query
+          schema: { type: string }
+          description: Slug or rid, or all-categories | featured | new-releases. Parent ids include all descendants.
+        - name: subcategory
+          in: query
+          schema: { type: string }
+          description: Legacy alias matching a nested child by label, rid, or slug.
+        - name: q
+          in: query
+          schema: { type: string }
+          description: Full-text search over name, brand attribute, and tag names.
+        - name: minPrice
+          in: query
+          schema: { type: number }
+          description: Major units, converted to minor (x100) server-side.
+        - name: maxPrice
+          in: query
+          schema: { type: number }
+        - name: minRating
+          in: query
+          schema: { type: number }
+          description: Filters on derived rating (approved reviews only).
+        - name: freeDelivery
+          in: query
+          schema: { type: boolean }
+          description: Requires a destination; 422 destination_required without one.
+        - name: maxDeliveryDays
+          in: query
+          schema: { type: integer }
+          description: Requires a destination; 422 destination_required without one.
+        - name: brand
+          in: query
+          schema: { type: string }
+        - name: color
+          in: query
+          schema: { type: string }
+        - name: screenSize
+          in: query
+          schema: { type: string }
+        - name: attributes[key]
+          in: query
+          schema: { type: string }
+          description: Filter any attribute by key, e.g. attributes[material]=Leather.
+        - name: sort
+          in: query
+          schema: { type: string, enum: [price_asc, price_desc, rating, popular, newest, name] }
+          description: Aliases accepted (price-low, best_selling, latest, ...). Default with q is popular-then-rating, else newest.
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit100'
+      responses:
+        '200':
+          description: Paginated listing with facets.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductListing' }
+        '422':
+          description: country_not_found (bad ?country=) or destination_required.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/products/featured:
+    get:
+      operationId: getProductsFeatured
+      tags: [Catalog]
+      summary: Featured items
+      parameters:
+        - $ref: '#/components/parameters/Country'
+        - $ref: '#/components/parameters/Limit100'
+      responses:
+        '200':
+          description: Featured items, newest first. No pagination wrapper.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ProductCard' }
+        '422':
+          description: country_not_found (unknown ?country=) or validation_error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Error'
+                  - $ref: '#/components/schemas/ErrorValidation'
+
+  /v1/products/new-arrivals:
+    get:
+      operationId: getProductsNewArrivals
+      tags: [Catalog]
+      summary: New arrivals
+      parameters:
+        - $ref: '#/components/parameters/Country'
+        - $ref: '#/components/parameters/Limit100'
+      responses:
+        '200':
+          description: New arrivals, newest first. No pagination wrapper.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ProductCard' }
+        '422':
+          description: country_not_found (unknown ?country=) or validation_error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Error'
+                  - $ref: '#/components/schemas/ErrorValidation'
+
+  /v1/products/recommendations:
+    get:
+      operationId: getProductsRecommendations
+      tags: [Catalog]
+      summary: Personalized recommendations
+      description: Signed-in shoppers get same-category items excluding recently viewed; guests (or empty history) get featured-by-popular.
+      parameters:
+        - $ref: '#/components/parameters/Country'
+        - $ref: '#/components/parameters/Limit100'
+      responses:
+        '200':
+          description: Recommended items.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ProductCard' }
+        '422':
+          description: country_not_found (unknown ?country=) or validation_error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Error'
+                  - $ref: '#/components/schemas/ErrorValidation'
+
+  /v1/products/{product}:
+    get:
+      operationId: getProductsProduct
+      tags: [Catalog]
+      summary: Product detail
+      parameters:
+        - name: product
+          in: path
+          required: true
+          schema: { type: string }
+          description: Product rid.
+        - $ref: '#/components/parameters/Country'
+      responses:
+        '200':
+          description: Detail payload (liked injected when signed in).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductDetail' }
+        '404':
+          description: Plain framework 404 when missing or inactive.
+  /v1/products/{product}/related:
+    get:
+      operationId: getProductsProductRelated
+      tags: [Catalog]
+      summary: Related products
+      description: Same category plus sibling categories under the same parent, excluding self, ordered by sold then rating.
+      parameters:
+        - name: product
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/Country'
+        - $ref: '#/components/parameters/Limit100'
+      responses:
+        '200':
+          description: Related items.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ProductCard' }
+        '404':
+          description: Plain framework 404 when missing or inactive.
+  /v1/products/{product}/reviews:
+    get:
+      operationId: getProductsProductReviews
+      tags: [Catalog]
+      summary: Approved product reviews
+      parameters:
+        - name: product
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/Page'
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10, minimum: 1, maximum: 100 }
+      responses:
+        '200':
+          description: Approved reviews, newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [reviews, total, page, limit, avgRating]
+                properties:
+                  reviews:
+                    type: array
+                    items: { $ref: '#/components/schemas/Review' }
+                  total: { type: integer }
+                  page: { type: integer }
+                  limit: { type: integer }
+                  avgRating: { type: number, description: Rounded to 1dp; 0.0 when no reviews. }
+        '404':
+          description: Plain framework 404 when missing or inactive.
+  /v1/search/suggestions:
+    get:
+      operationId: getSearchSuggestions
+      tags: [Search]
+      summary: Autocomplete suggestions
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 1 }
+          description: Matches product name or brand attribute.
+        - name: limit
+          in: query
+          schema: { type: integer, default: 8, minimum: 1, maximum: 20 }
+      responses:
+        '200':
+          description: Suggestions ordered by sold then name.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [suggestions]
+                properties:
+                  suggestions:
+                    type: array
+                    items:
+                      type: object
+                      required: [rid, name, image, imageUrl]
+                      properties:
+                        rid: { type: string }
+                        name: { type: string }
+                        image: { type: string }
+                        imageUrl: { type: string, nullable: true }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /v1/cart:
+    get:
+      operationId: getCart
+      tags: [Cart]
+      summary: Get cart and summary
+      description: Resolves the user cart when signed in, else the guest cart from X-Cart-Id (creates one when missing). Returns X-Cart-Id header and cart_id cookie.
+      parameters:
+        - $ref: '#/components/parameters/CartId'
+      responses:
+        '200':
+          description: Cart with items and totals.
+          headers:
+            X-Cart-Id: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+  /v1/cart/items:
+    post:
+      operationId: postCartItems
+      tags: [Cart]
+      summary: Add item
+      description: Absent variantId means the default variant. An empty cart adopts the product currency; a cart with lines rejects mismatches (422).
+      parameters:
+        - $ref: '#/components/parameters/CartId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId]
+              properties:
+                productId: { type: string, description: Product rid (must be active). }
+                variantId: { type: string, description: Variant rid of that product; default variant when omitted. }
+                quantity: { type: integer, minimum: 1, default: 1 }
+      responses:
+        '200':
+          description: Updated cart.
+          headers:
+            X-Cart-Id: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+        '404':
+          description: product_not_found or variant_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: invalid_quantity, currency_mismatch, or insufficient_stock (details carry variantRid and available).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorValidation'
+                  - $ref: '#/components/schemas/ErrorInvalidQuantity'
+                  - $ref: '#/components/schemas/ErrorCurrencyMismatch'
+                  - $ref: '#/components/schemas/ErrorInsufficientStock'
+    delete:
+      operationId: deleteCartItems
+      tags: [Cart]
+      summary: Remove selected items
+      parameters:
+        - $ref: '#/components/parameters/CartId'
+      responses:
+        '200':
+          description: Updated cart.
+          headers:
+            X-Cart-Id: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+        '422':
+          description: validation_error (malformed body).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorValidation' }
+
+  /v1/cart/items/{item}:
+    patch:
+      operationId: patchCartItemsItem
+      tags: [Cart]
+      summary: Update quantity or selection
+      description: >-
+        Quantity 0 deletes the line. At least one of quantity/selected is
+        required; sending both applies both. Omitting both fails
+        validation_error (422).
+      parameters:
+        - $ref: '#/components/parameters/CartId'
+        - name: item
+          in: path
+          required: true
+          schema: { type: string }
+          description: Cart line rid.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              anyOf:
+                - required: [quantity]
+                - required: [selected]
+              properties:
+                quantity: { type: integer, minimum: 0 }
+                selected: { type: boolean }
+      responses:
+        '200':
+          description: Updated cart.
+          headers:
+            X-Cart-Id: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+        '404':
+          description: cart_item_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: validation_error (nothing to update) or insufficient_stock.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    delete:
+      operationId: deleteCartItemsItem
+      tags: [Cart]
+      summary: Remove one item
+      parameters:
+        - $ref: '#/components/parameters/CartId'
+        - name: item
+          in: path
+          required: true
+          schema: { type: string }
+          description: Cart line rid.
+      responses:
+        '200':
+          description: Updated cart.
+          headers:
+            X-Cart-Id: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+        '404':
+          description: cart_item_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/cart/items/select-all:
+    patch:
+      operationId: patchCartItemsSelectAll
+      tags: [Cart]
+      summary: Select or deselect all lines
+      parameters:
+        - $ref: '#/components/parameters/CartId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [selected]
+              properties:
+                selected: { type: boolean }
+      responses:
+        '200':
+          description: Updated cart.
+          headers:
+            X-Cart-Id: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+        '422':
+          description: validation_error (selected is required).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorValidation' }
+
+  /v1/cart/items/move-to-wishlist:
+    post:
+      operationId: postCartItemsMoveToWishlist
+      tags: [Cart]
+      summary: Move selected lines to wishlist
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/CartId'
+      responses:
+        '200':
+          description: Updated cart (moved lines deleted).
+          headers:
+            X-Cart-Id: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/cart/merge:
+    post:
+      operationId: postCartMerge
+      tags: [Cart]
+      summary: Merge guest cart after login
+      description: Guest lines fold into the user cart (quantities add up); the guest cart is deleted. No-op without a guest cart.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/CartId'
+      responses:
+        '200':
+          description: User cart.
+          headers:
+            X-Cart-Id: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/checkout/preview:
+    get:
+      operationId: getCheckoutPreview
+      tags: [Checkout]
+      summary: Checkout page data
+      description: Selected lines only. Address comes from the default saved address when signed in. Shipping uses the destination when known.
+      parameters:
+        - $ref: '#/components/parameters/CartId'
+      responses:
+        '200':
+          description: Checkout preview.
+          headers:
+            X-Cart-Id: { schema: { type: string } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, address, shipping, paymentMethods, summary]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/CartItem' }
+                  address:
+                    type: object
+                    nullable: true
+                    required: [contact, line1, line2]
+                    properties:
+                      contact: { type: string, description: 'Name plus phone, display string.'}
+                      line1: { type: string }
+                      line2: { type: string }
+                  shipping:
+                    type: object
+                    required: [feeMoney, deliveryDays, courierLabel]
+                    properties:
+                      feeMoney: { $ref: '#/components/schemas/Money' }
+                      deliveryDays:
+                        type: object
+                        nullable: true
+                        required: [min, max]
+                        properties:
+                          min: { type: integer }
+                          max: { type: integer }
+                      courierLabel: { type: string, nullable: true }
+                  paymentMethods:
+                    type: array
+                    description: DB methods the cart currency (and destination, when known) can pay with.
+                    items: { $ref: '#/components/schemas/CheckoutMethod' }
+                  summary: { $ref: '#/components/schemas/CartSummary' }
+        '422':
+          description: country_not_found (unknown ?country=) or validation_error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Error'
+                  - $ref: '#/components/schemas/ErrorValidation'
+
+  /v1/checkout/shipping-quote:
+    post:
+      operationId: postCheckoutShippingQuote
+      tags: [Checkout]
+      summary: Shipping fee and delivery window
+      description: Quote by saved address (auth required) or by a raw address. Includes cart totals with tax.
+      parameters:
+        - $ref: '#/components/parameters/CartId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                addressRid: { type: string, description: Saved address rid (auth required). }
+                country: { type: string, description: 'Required without addressRid (ISO code, rid, or name).'}
+                firstName: { type: string }
+                lastName: { type: string }
+                phoneCountryCode: { type: string }
+                phoneNumber: { type: string }
+                addressLine: { type: string }
+                region: { type: string }
+                city: { type: string }
+                cityLine: { type: string }
+      responses:
+        '200':
+          description: Quote plus totals.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [feeMoney, deliveryDays, courierLabel, summary]
+                properties:
+                  feeMoney: { $ref: '#/components/schemas/Money' }
+                  deliveryDays:
+                    type: object
+                    nullable: true
+                    required: [min, max]
+                    properties:
+                      min: { type: integer }
+                      max: { type: integer }
+                  courierLabel: { type: string, nullable: true }
+                  summary: { $ref: '#/components/schemas/CartSummary' }
+        '401':
+          description: unauthenticated (saved address as guest).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: address_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: country_not_found or validation.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/checkout/payment-intent:
+    post:
+      operationId: postCheckoutPaymentIntent
+      tags: [Checkout]
+      summary: Pay an order
+      description: Charges exactly the order frozen total through the method or currency provider. Requires Idempotency-Key (missing gives 428; replay returns the first response with Idempotent-Replayed; reused key with different body gives 422 idempotency_key_reused).
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderId]
+              properties:
+                orderId: { type: string, description: Order rid (must belong to the user). }
+                paymentMethodId:
+                  type: string
+                  description: Optional method rid or code. Unknown gives 404 payment_method_not_found; a method that does not serve the order currency gives 422 payment_method_unavailable. Omitted uses the order currency provider.
+      responses:
+        '200':
+          description: Provider checkout opened. Redirect the shopper to checkoutUrl, then poll GET /payments/{payment} using reference from the return URL.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [checkoutUrl, paymentRid, provider, orderId, amount]
+                properties:
+                  checkoutUrl: { type: string }
+                  paymentRid: { type: string }
+                  provider: { type: string, example: stripe }
+                  paymentMethodId: { type: string, nullable: true, description: Method rid when one was chosen. }
+                  orderId: { type: string }
+                  amount: { $ref: '#/components/schemas/Money' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: order_not_found or payment_method_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: order_already_paid or order_not_payable (cancelled). A failed payment leaves the order payable; call again to retry.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorOrderAlreadyPaid'
+                  - $ref: '#/components/schemas/ErrorOrderNotPayable'
+        '422':
+          description: validation_error, payment_provider_error, payment_method_unavailable, or idempotency_key_reused.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Error'
+                  - $ref: '#/components/schemas/ErrorValidation'
+                  - $ref: '#/components/schemas/ErrorPaymentMethodUnavailable'
+                  - $ref: '#/components/schemas/ErrorIdempotencyKeyReused'
+        '428':
+          description: Missing Idempotency-Key (idempotency_key_required).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorIdempotencyKeyRequired' }
+  /v1/orders:
+    post:
+      operationId: postOrders
+      tags: [Orders]
+      summary: Place order (awaiting payment)
+      description: Freezes totals at current prices, holds stock, deletes ordered lines from the cart. Requires Idempotency-Key (same replay rules as payment-intent).
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CartId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [addressId, cartItemIds]
+              properties:
+                addressId: { type: string, description: Saved address rid of the user. }
+                cartItemIds:
+                  type: array
+                  minItems: 1
+                  items: { type: string }
+                  description: Cart line rids to order. Falls back to selected lines when merge replaced guest rids.
+      responses:
+        '201':
+          description: Order created with status pending_payment.
+          headers:
+            X-Cart-Id: { schema: { type: string } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [orderId, orderReference, estimatedDelivery, status, paymentStatus, totalMoney]
+                properties:
+                  orderId: { type: string }
+                  orderReference: { type: string, example: '#HCO5241124542', description: Display reference. }
+                  estimatedDelivery: { $ref: '#/components/schemas/FrozenDeliveryWording' }
+                  status: { type: string, example: pending_payment }
+                  paymentStatus: { type: string, example: unpaid }
+                  totalMoney: { $ref: '#/components/schemas/Money' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: address_not_found or cart_item_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: >-
+            price_changed (details.items carry cartItemId, previousPrice,
+            price; prices are acknowledged so retry with a new key succeeds),
+            insufficient_stock, item_unavailable, currency_mismatch, or
+            cart_changed.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorPriceChanged'
+                  - $ref: '#/components/schemas/ErrorInsufficientStock'
+                  - $ref: '#/components/schemas/ErrorItemUnavailable'
+                  - $ref: '#/components/schemas/ErrorCurrencyMismatch'
+                  - $ref: '#/components/schemas/ErrorCartChanged'
+        '422':
+          description: validation_error, cart_empty, cart_items_required, or idempotency_key_reused.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Error'
+                  - $ref: '#/components/schemas/ErrorValidation'
+                  - $ref: '#/components/schemas/ErrorIdempotencyKeyReused'
+        '428':
+          description: Missing Idempotency-Key (idempotency_key_required).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorIdempotencyKeyRequired' }
+    get:
+      operationId: getOrders
+      tags: [Orders]
+      summary: Order list
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, default: all }
+          description: all | returns | pending_payment | processing | shipped | delivered | cancelled.
+        - name: search
+          in: query
+          schema: { type: string }
+          description: Matches order rid or reference.
+        - $ref: '#/components/parameters/Page'
+        - name: limit
+          in: query
+          schema: { type: integer, default: 15, minimum: 1, maximum: 50 }
+      responses:
+        '200':
+          description: User orders, newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [orders, total]
+                properties:
+                  orders:
+                    type: array
+                    items: { $ref: '#/components/schemas/OrderRecord' }
+                  total: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422':
+          description: invalid_status.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/orders/buy-again:
+    get:
+      operationId: getOrdersBuyAgain
+      tags: [Orders]
+      summary: Buy-again products
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 12, minimum: 1, maximum: 50 }
+      responses:
+        '200':
+          description: Products from past orders.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [products]
+                properties:
+                  products:
+                    type: array
+                    items: { $ref: '#/components/schemas/ProductCard' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/orders/{order}:
+    get:
+      operationId: getOrdersOrder
+      tags: [Orders]
+      summary: Order detail
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: order
+          in: path
+          required: true
+          schema: { type: string }
+          description: Order rid.
+      responses:
+        '200':
+          description: Full order with items, totals, taxes, address, shipping, eligibility, returns, tracking.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderDetail' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: order_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/orders/{order}/buy-again:
+    post:
+      operationId: postOrdersOrderBuyAgain
+      tags: [Orders]
+      summary: Re-add order items to cart
+      description: Same variant when it still exists, else the product default. Skips lines without a product.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: order
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/CartId'
+      responses:
+        '200':
+          description: Cart with re-added lines.
+          headers:
+            X-Cart-Id: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: order_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/orders/{order}/return:
+    post:
+      operationId: postOrdersOrderReturn
+      tags: [Orders]
+      summary: Request a return
+      description: Only after shipping or delivery, for returnable categories inside their window (see returnEligibility in order detail).
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: order
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, maxLength: 2000 }
+      responses:
+        '201':
+          description: Return request opened.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, returnId, rid, status]
+                properties:
+                  success: { type: boolean, example: true }
+                  returnId: { type: string }
+                  rid: { type: string }
+                  status: { type: string, example: requested }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: order_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: return_not_allowed (with eligibility details when the window rule blocks) or return_already_open.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorReturnNotAllowed'
+                  - $ref: '#/components/schemas/ErrorReturnAlreadyOpen'
+  /v1/orders/{order}/tracking:
+    get:
+      operationId: getOrdersOrderTracking
+      tags: [Orders]
+      summary: Tracking timeline
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: order
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Timeline sorted by occurrence.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [events]
+                properties:
+                  events:
+                    type: array
+                    items: { $ref: '#/components/schemas/TrackingEvent' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: order_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/payments/{payment}:
+    get:
+      operationId: getPaymentsPayment
+      tags: [Payments]
+      summary: Payment status
+      description: Poll after the provider redirects back (using reference from the return URL). Never trust redirect params.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: payment
+          in: path
+          required: true
+          schema: { type: string }
+          description: Payment rid.
+      responses:
+        '200':
+          description: Payment owned by the user.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [rid, provider, status, amount, orderId]
+                properties:
+                  rid: { type: string }
+                  provider: { type: string }
+                  status: { type: string, example: pending }
+                  amount: { $ref: '#/components/schemas/Money' }
+                  orderId: { type: string, nullable: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: payment_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/payment-methods/networks:
+    get:
+      operationId: getPaymentMethodsNetworks
+      tags: [Payments]
+      summary: Mobile money networks
+      responses:
+        '200':
+          description: Fixed network list.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [networks]
+                properties:
+                  networks:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, label]
+                      properties:
+                        id: { type: string, example: mtn }
+                        label: { type: string, example: MTN }
+  /v1/payment-methods/checkout:
+    get:
+      operationId: getPaymentMethodsCheckout
+      tags: [Payments]
+      summary: Checkout methods for a currency and destination
+      description: Public; for checkout contexts without a cart. Inactive methods never appear.
+      parameters:
+        - name: currency
+          in: query
+          schema: { type: string, minLength: 3, maxLength: 3 }
+          description: Omitted means all active methods unfiltered.
+        - name: country
+          in: query
+          schema: { type: string }
+          description: ISO code, rid, or name; unknown values are ignored (treated as no country).
+      responses:
+        '200':
+          description: Available methods.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [paymentMethods]
+                properties:
+                  paymentMethods:
+                    type: array
+                    items: { $ref: '#/components/schemas/CheckoutMethod' }
+        '422':
+          description: validation_error (currency must be 3 characters).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorValidation' }
+
+  /v1/payment-methods:
+    get:
+      operationId: getPaymentMethods
+      tags: [Payments]
+      summary: Saved payment methods
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: User saved methods.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [paymentMethods]
+                properties:
+                  paymentMethods:
+                    type: array
+                    items: { $ref: '#/components/schemas/SavedPaymentMethod' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/payment-methods/{paymentMethod}:
+    delete:
+      operationId: deletePaymentMethodsPaymentMethod
+      tags: [Payments]
+      summary: Delete saved method
+      description: The default passes to the newest remaining method.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: paymentMethod
+          in: path
+          required: true
+          schema: { type: string }
+          description: Saved method rid.
+      responses:
+        '200':
+          description: Deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success: { type: boolean, example: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: payment_method_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/payment-methods/{paymentMethod}/default:
+    patch:
+      operationId: patchPaymentMethodsPaymentMethodDefault
+      tags: [Payments]
+      summary: Set default saved method
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: paymentMethod
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Updated method.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SavedPaymentMethod' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: payment_method_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/reviews/waiting:
+    get:
+      operationId: getReviewsWaiting
+      tags: [Reviews]
+      summary: Order lines awaiting review
+      description: Delivered lines without a review.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Waiting items.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/WaitingReview' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/reviews/reviewed:
+    get:
+      operationId: getReviewsReviewed
+      tags: [Reviews]
+      summary: Submitted reviews
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: User reviews with moderation status and product cards.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ReviewedReview' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/reviews:
+    post:
+      operationId: postReviews
+      tags: [Reviews]
+      summary: Submit a review
+      description: One review per order line; published only after staff approval (status pending).
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reviewId, rating]
+              properties:
+                reviewId: { type: string, description: Waiting order-line rid from reviews/waiting. }
+                rating: { type: integer, minimum: 1, maximum: 5 }
+                title: { type: string, maxLength: 160 }
+                detailedReview: { type: string, maxLength: 5000, description: Stored as the review body. }
+      responses:
+        '201':
+          description: Review created, pending moderation.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReviewedReview' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: waiting_review_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: review_exists.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: product_missing or validation.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/wishlist:
+    get:
+      operationId: getWishlist
+      tags: [Wishlist]
+      summary: Wishlist products
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: category
+          in: query
+          schema: { type: string }
+          description: Category rid or slug filter.
+        - name: minRating
+          in: query
+          schema: { type: number }
+      responses:
+        '200':
+          description: Wishlisted product cards.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ProductCard' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/wishlist/categories:
+    get:
+      operationId: getWishlistCategories
+      tags: [Wishlist]
+      summary: Wishlist category filter options
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Categories present in the wishlist.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [categories]
+                properties:
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      required: [rid, slug, label]
+                      properties:
+                        rid: { type: string }
+                        slug: { type: string }
+                        label: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/wishlist/{product}:
+    post:
+      operationId: postWishlistProduct
+      tags: [Wishlist]
+      summary: Add to wishlist
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: product
+          in: path
+          required: true
+          schema: { type: string }
+          description: Product rid.
+      responses:
+        '201':
+          description: Added (idempotent).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, productRid]
+                properties:
+                  success: { type: boolean, example: true }
+                  productRid: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: product_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    delete:
+      operationId: deleteWishlistProduct
+      tags: [Wishlist]
+      summary: Remove from wishlist
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: product
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Removed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success: { type: boolean, example: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: product_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/users/me/profile:
+    get:
+      operationId: getUsersMeProfile
+      tags: [Account]
+      summary: Personal info
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Profile.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserProfile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    patch:
+      operationId: patchUsersMeProfile
+      tags: [Account]
+      summary: Update personal info
+      description: Partial update; only sent fields change. Avatar is a URL or path string.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName: { type: string, maxLength: 120 }
+                displayName: { type: string, maxLength: 60, nullable: true }
+                avatar: { type: string, maxLength: 500, nullable: true }
+      responses:
+        '200':
+          description: Updated profile.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserProfile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /v1/users/me/security:
+    get:
+      operationId: getUsersMeSecurity
+      tags: [Account]
+      summary: Security settings
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Email, phone, and 2FA flag (never the secret).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [email, phone, twoFactorEnabled]
+                properties:
+                  email: { type: string }
+                  phone: { type: string, nullable: true }
+                  twoFactorEnabled: { type: boolean }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/users/me/email:
+    patch:
+      operationId: patchUsersMeEmail
+      tags: [Account]
+      summary: Change email
+      description: Requires the current password; the new address starts unverified.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email, maxLength: 255, description: Must be unique among live accounts. }
+                password: { type: string, description: Current password. }
+      responses:
+        '200':
+          description: Updated profile.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserProfile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422':
+          description: Wrong password (ValidationException on password) or taken email.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/users/me/phone:
+    patch:
+      operationId: patchUsersMePhone
+      tags: [Account]
+      summary: Add, update, or clear phone
+      description: Missing or null phone clears it.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone: { type: string, maxLength: 40, nullable: true }
+      responses:
+        '200':
+          description: Security settings.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [email, phone, twoFactorEnabled]
+                properties:
+                  email: { type: string }
+                  phone: { type: string, nullable: true }
+                  twoFactorEnabled: { type: boolean }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/users/me/password:
+    patch:
+      operationId: patchUsersMePassword
+      tags: [Account]
+      summary: Change password
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, password, password_confirmation]
+              properties:
+                currentPassword: { type: string }
+                password: { type: string }
+                password_confirmation: { type: string }
+      responses:
+        '200':
+          description: Changed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success: { type: boolean, example: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422':
+          description: Wrong current password (ValidationException on currentPassword).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/users/me/2fa/enable:
+    post:
+      operationId: postUsersMe2faEnable
+      tags: [Account]
+      summary: Enable two-factor auth
+      description: >-
+        Generates a TOTP secret (stored encrypted). Show the QR once; it is never
+        returned again.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: 2FA enabled with provisioning data.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [enabled, secret, otpauthUrl]
+                properties:
+                  enabled: { type: boolean, example: true }
+                  secret:
+                    type: string
+                    description: >-
+                      Base32 TOTP seed. Show once to the user; the server never
+                      returns it again after this response. Render it into an
+                      authenticator app, do not persist it in the client.
+                  otpauthUrl:
+                    type: string
+                    description: otpauth:// provisioning URI. Render this as a QR code yourself; there is no separate image field.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422':
+          description: two_factor_already_enabled.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/users/me/2fa/disable:
+    post:
+      operationId: postUsersMe2faDisable
+      tags: [Account]
+      summary: Disable two-factor auth
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, description: Current password. }
+      responses:
+        '200':
+          description: Disabled.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [enabled, success]
+                properties:
+                  enabled: { type: boolean, example: false }
+                  success: { type: boolean, example: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422':
+          description: Wrong password.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/users/me:
+    delete:
+      operationId: deleteUsersMe
+      tags: [Account]
+      summary: Delete account
+      description: Soft-deletes the user (orders and history survive; email freed for reuse). Revokes all tokens.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, description: Current password (OAuth-only accounts have none; use password reset first). }
+      responses:
+        '200':
+          description: Deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success: { type: boolean, example: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422':
+          description: Wrong password.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/addresses:
+    get:
+      operationId: getAddresses
+      tags: [Addresses]
+      summary: List addresses
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Addresses, default first then newest.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [addresses]
+                properties:
+                  addresses:
+                    type: array
+                    items: { $ref: '#/components/schemas/Address' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      operationId: postAddresses
+      tags: [Addresses]
+      summary: Create address
+      description: First address (or isDefault true) becomes the default. Country accepts ISO code, rid, or exact name.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [country, firstName, lastName, phoneCountryCode, phoneNumber, addressLine]
+              properties:
+                country: { type: string, maxLength: 120 }
+                regionId: { type: string, description: Region rid; must belong to the country. }
+                cityId: { type: string, description: City rid; must belong to the region. }
+                firstName: { type: string, maxLength: 120 }
+                lastName: { type: string, maxLength: 120 }
+                phoneCountryCode: { type: string, maxLength: 16 }
+                phoneNumber: { type: string, maxLength: 40 }
+                addressLine: { type: string, maxLength: 255 }
+                region: { type: string, maxLength: 120, description: Required without regionId; free text stored when no row matches. }
+                city: { type: string, maxLength: 120, description: Required without cityId. }
+                cityLine: { type: string, maxLength: 120 }
+                isDefault: { type: boolean, description: True clears the previous default. }
+      responses:
+        '201':
+          description: Created address.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Address' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /v1/addresses/lookup/countries:
+    get:
+      operationId: getAddressesLookupCountries
+      tags: [Addresses]
+      summary: Country dropdown
+      responses:
+        '200':
+          description: All countries by name.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [countries]
+                properties:
+                  countries:
+                    type: array
+                    items:
+                      type: object
+                      required: [rid, code, name, phoneCode]
+                      properties:
+                        rid: { type: string }
+                        code: { type: string, description: ISO alpha-2. }
+                        name: { type: string }
+                        phoneCode: { type: string, nullable: true }
+  /v1/addresses/lookup/regions:
+    get:
+      operationId: getAddressesLookupRegions
+      tags: [Addresses]
+      summary: Regions by country
+      parameters:
+        - name: country
+          in: query
+          required: true
+          schema: { type: string }
+          description: ISO code or country rid.
+      responses:
+        '200':
+          description: Regions of the country.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [regions]
+                properties:
+                  regions:
+                    type: array
+                    items:
+                      type: object
+                      required: [rid, name, countryRid]
+                      properties:
+                        rid: { type: string }
+                        name: { type: string }
+                        countryRid: { type: string }
+        '404':
+          description: country_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: country_required.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/addresses/lookup/cities:
+    get:
+      operationId: getAddressesLookupCities
+      tags: [Addresses]
+      summary: Cities by region
+      parameters:
+        - name: region
+          in: query
+          required: true
+          schema: { type: string }
+          description: Region rid.
+      responses:
+        '200':
+          description: Cities of the region.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [cities]
+                properties:
+                  cities:
+                    type: array
+                    items:
+                      type: object
+                      required: [rid, name, regionRid]
+                      properties:
+                        rid: { type: string }
+                        name: { type: string }
+                        regionRid: { type: string }
+        '404':
+          description: region_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: region_required.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/addresses/{address}:
+    patch:
+      operationId: patchAddressesAddress
+      tags: [Addresses]
+      summary: Update address
+      description: Partial update; changing country/region/city re-resolves geo from merged values.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema: { type: string }
+          description: Address rid (must be owned).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                country: { type: string, maxLength: 120 }
+                regionId: { type: string }
+                cityId: { type: string }
+                firstName: { type: string, maxLength: 120 }
+                lastName: { type: string, maxLength: 120 }
+                phoneCountryCode: { type: string, maxLength: 16 }
+                phoneNumber: { type: string, maxLength: 40 }
+                addressLine: { type: string, maxLength: 255 }
+                region: { type: string, maxLength: 120 }
+                city: { type: string, maxLength: 120 }
+                cityLine: { type: string, maxLength: 120 }
+                isDefault: { type: boolean, description: True clears others; false only unsets this one. }
+      responses:
+        '200':
+          description: Updated address.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Address' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: address_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      operationId: deleteAddressesAddress
+      tags: [Addresses]
+      summary: Delete address
+      description: Deleting the default promotes the newest remaining address.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success: { type: boolean, example: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: address_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/addresses/{address}/default:
+    patch:
+      operationId: patchAddressesAddressDefault
+      tags: [Addresses]
+      summary: Set default address
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Address with isDefault true.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Address' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: address_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/addresses/{address}/duplicate:
+    post:
+      operationId: postAddressesAddressDuplicate
+      tags: [Addresses]
+      summary: Duplicate address
+      description: Copies all fields with isDefault false and a new rid.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '201':
+          description: New address.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Address' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: address_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/browsing-history:
+    post:
+      operationId: postBrowsingHistory
+      tags: [Account]
+      summary: Record a product view
+      description: Authenticated or guest (guest identified by X-Cart-Id or cart cookie; 401 guest_token_required without one).
+      parameters:
+        - $ref: '#/components/parameters/CartId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId]
+              properties:
+                productId: { type: string, description: Product rid. Call when a product detail page opens. }
+      responses:
+        '201':
+          description: Recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, rid, productId]
+                properties:
+                  success: { type: boolean, example: true }
+                  rid: { type: string }
+                  productId: { type: string }
+        '401':
+          description: guest_token_required.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: product_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    get:
+      operationId: getBrowsingHistory
+      tags: [Account]
+      summary: Date-grouped history
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Non-empty sections only (today, yesterday, older).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sections]
+                properties:
+                  sections:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, label, items]
+                      properties:
+                        id:
+                          type: string
+                          enum: [today, yesterday, older]
+                          description: Bucket key, not a resource identifier.
+                        label: { type: string }
+                        items:
+                          type: array
+                          items:
+                            type: object
+                            required: [rid, viewedAt, product]
+                            properties:
+                              rid: { type: string }
+                              viewedAt: { type: string, format: date-time }
+                              product: { $ref: '#/components/schemas/ProductCard' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      operationId: deleteBrowsingHistory
+      tags: [Account]
+      summary: Delete history entries
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  minItems: 1
+                  items: { type: string }
+                  description: History entry rids.
+      responses:
+        '200':
+          description: Deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success: { type: boolean, example: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/browsing-history/all:
+    delete:
+      operationId: deleteBrowsingHistoryAll
+      tags: [Account]
+      summary: Clear all history
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Cleared.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success: { type: boolean, example: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/notifications/settings:
+    get:
+      operationId: getNotificationsSettings
+      tags: [Account]
+      summary: Notification preferences
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Both settings (promotions, orderUpdates).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [settings]
+                properties:
+                  settings:
+                    type: array
+                    items: { $ref: '#/components/schemas/NotificationSetting' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/notifications/settings/{id}:
+    patch:
+      operationId: patchNotificationsSettingsId
+      tags: [Account]
+      summary: Toggle a preference
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, enum: [promotions, orderUpdates] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: { type: boolean }
+      responses:
+        '200':
+          description: Updated setting.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationSetting' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: notification_setting_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/content/pages/{slug}:
+    get:
+      operationId: getContentPagesSlug
+      tags: [Content]
+      summary: Legal or about page
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+          description: about | privacy-policy | warranty | shipping-delivery | return-refund | secure-payments | intellectual-property.
+      responses:
+        '200':
+          description: Page content blocks.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [rid, slug, title, lastUpdated, intro, blocks]
+                properties:
+                  rid: { type: string }
+                  slug: { type: string }
+                  title: { type: string }
+                  lastUpdated: { type: string }
+                  intro:
+                    type: array
+                    items: { type: string }
+                  blocks:
+                    type: array
+                    items:
+                      type: object
+                      description: One block per row; render by `type` and ignore unknown types.
+                      required: [type]
+                      properties:
+                        type: { type: string, enum: [heading, paragraph, bullets] }
+                        text: { type: string }
+                        items: { type: array, items: { type: string } }
+        '404':
+          description: content_page_not_found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /v1/content/home:
+    get:
+      operationId: getContentHome
+      tags: [Content]
+      summary: Home content
+      responses:
+        '200':
+          description: CMS payload array (keys defined in CMS), or {} when missing.
+          content:
+            application/json:
+              schema: { type: object }
+  /v1/content/footer:
+    get:
+      operationId: getContentFooter
+      tags: [Content]
+      summary: Footer content
+      responses:
+        '200':
+          description: CMS payload array (keys defined in CMS), or {} when missing.
+          content:
+            application/json:
+              schema: { type: object }
+  /v1/newsletter/subscribe:
+    post:
+      operationId: postNewsletterSubscribe
+      tags: [Content]
+      summary: Subscribe email
+      description: Resubscribes existing rows.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email, maxLength: 255 }
+      responses:
+        '201':
+          description: Subscribed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, email]
+                properties:
+                  success: { type: boolean, example: true }
+                  email: { type: string }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /v1/newsletter/unsubscribe:
+    post:
+      operationId: postNewsletterUnsubscribe
+      tags: [Content]
+      summary: Unsubscribe via token
+      description: Idempotent; unknown tokens 404.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string, description: Token from the subscribe flow or email link. }
+      responses:
+        '200':
+          description: Unsubscribed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, email]
+                properties:
+                  success: { type: boolean, example: true }
+                  email: { type: string }
+        '404':
+          description: newsletter_token_invalid.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /v1/partnerships/inquiries:
+    post:
+      operationId: postPartnershipsInquiries
+      tags: [Content]
+      summary: Partnership inquiry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, name]
+              properties:
+                email: { type: string, format: email, maxLength: 255 }
+                name: { type: string, maxLength: 120 }
+                company: { type: string, maxLength: 160 }
+                message: { type: string, maxLength: 5000 }
+                website: { type: string, maxLength: 255 }
+      responses:
+        '201':
+          description: Inquiry recorded; staff notified per recipient settings.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, rid, type]
+                properties:
+                  success: { type: boolean, example: true }
+                  rid: { type: string }
+                  type: { type: string, example: partnership }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /v1/quotations:
+    post:
+      operationId: postQuotations
+      tags: [Content]
+      summary: Request quotation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, name]
+              properties:
+                email: { type: string, format: email, maxLength: 255 }
+                name: { type: string, maxLength: 120 }
+                company: { type: string, maxLength: 160 }
+                phone: { type: string, maxLength: 40 }
+                message: { type: string, maxLength: 5000 }
+                productIds:
+                  type: array
+                  items: { type: string }
+                  description: Product rids of interest (stored, not validated).
+      responses:
+        '201':
+          description: Recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, rid, type]
+                properties:
+                  success: { type: boolean, example: true }
+                  rid: { type: string }
+                  type: { type: string, example: quotation }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /v1/support/agent-requests:
+    post:
+      operationId: postSupportAgentRequests
+      tags: [Content]
+      summary: Request an agent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, name]
+              properties:
+                email: { type: string, format: email, maxLength: 255 }
+                name: { type: string, maxLength: 120 }
+                phone: { type: string, maxLength: 40 }
+                message: { type: string, maxLength: 5000 }
+                orderId: { type: string, maxLength: 80, description: Order rid if related (not verified). }
+      responses:
+        '201':
+          description: Recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, rid, type]
+                properties:
+                  success: { type: boolean, example: true }
+                  rid: { type: string }
+                  type: { type: string, example: agent }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /webhooks/{provider}:
+    post:
+      operationId: postWebhooksProvider
+      tags: [Webhooks]
+      summary: Provider webhook (server-to-server)
+      description: Never called by clients. Never send X-Cart-Id, bearer tokens, or staff session here; resolution is by payment rid or provider reference in the payload, verified via the provider API before marking paid, stored idempotently by (provider, external_event_id).
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema: { type: string }
+          description: stripe | paystack | fake | paypal | tabby | tamara.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Provider-specific event payload.
+      responses:
+        '200':
+          description: Ingested (processing continues async; paid state appears via GET /payments/{payment}).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [received, provider, externalEventId]
+                properties:
+                  received: { type: boolean, example: true }
+                  provider: { type: string }
+                  externalEventId: { type: string }
+        '400':
+          description: webhook_ingest_failed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: invalid_provider.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Sanctum access token from login, register, OAuth, or refresh.
+  parameters:
+    CartId:
+      name: X-Cart-Id
+      in: header
+      schema: { type: string }
+      description: Guest cart rid. Ignored once authenticated except merge and order placement (which consume it). Responses return it as a header and cart_id cookie.
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, format: uuid }
+      description: 'UUID per user action, reused across retries. Missing gives 428; replay returns the first response with Idempotent-Replayed: true; a reused key with a different body gives 422 idempotency_key_reused.'
+    Country:
+      name: country
+      in: query
+      schema: { type: string }
+      description: Destination as ISO code, country rid, or name. Drives delivery quotes and tax; defaults to the signed-in default address. Unknown values give 422 country_not_found.
+    Depth:
+      name: depth
+      in: query
+      schema: { type: integer, minimum: 0, maximum: 10 }
+      description: Child nesting depth; 0 means no children, omitted means the full tree.
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, default: 1, minimum: 1 }
+    Limit100:
+      name: limit
+      in: query
+      schema: { type: integer, default: 24, minimum: 1, maximum: 100 }
+  responses:
+    Unauthorized:
+      description: Unauthenticated (api_error envelope, code unauthenticated).
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationError:
+      description: Validation failure (422).
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, description: 'Stable machine code (e.g. price_changed, currency_mismatch). Branch on this, never on message text.'}
+            message: { type: string, description: 'Human sentence; not translated, do not display verbatim in localized UI.'}
+            details:
+              type: object
+              description: >-
+                Optional machine payload; the shape depends on code. Known shapes
+                are formalised below (ValidationFieldErrors, CartItemIds,
+                PriceChangedDetails, StockShortfall, VariantStockShortfall,
+                PaymentMethodUnavailable, ReturnEligibility, OrderNotPayable).
+                Codes without a documented shape send no details. Any code may
+                add keys later; treat unknown keys as forward-compatible and
+                ignore them.
+      x-error-codes:
+        - code: validation_error
+          status: 422
+          details: ValidationFieldErrors
+          note: Field name to list of messages; the field names are the request body keys.
+        - code: price_changed
+          status: 409
+          details: PriceChangedDetails
+          note: 'Prices were already acknowledged server-side; show the new prices and order again with a fresh Idempotency-Key.'
+        - code: currency_mismatch
+          status: 409
+          details: CartItemIds
+          note: The listed cart lines are priced in another currency; remove them.
+        - code: item_unavailable
+          status: 409
+          details: CartItemIds
+          note: The listed cart lines are inactive, unbuyable, or their variant is gone.
+        - code: insufficient_stock
+          status: [409, 422]
+          details: StockShortfall or VariantStockShortfall
+          note: Adding one line gives VariantStockShortfall; placing an order gives StockShortfall with every short line.
+        - code: payment_method_not_found
+          status: 404
+          note: Unknown method rid or code.
+        - code: payment_method_unavailable
+          status: 422
+          details: PaymentMethodUnavailable
+          note: The method exists but is not enabled for that currency or destination.
+        - code: order_not_payable
+          status: 409
+          details: OrderNotPayable
+          note: Order already cancelled, shipped, or otherwise past payment.
+        - code: order_already_paid
+          status: 409
+          note: Payment already settled; do not retry.
+        - code: return_not_allowed
+          status: 422
+          details: ReturnEligibility
+          note: Also returned when the order has not shipped yet, with no details.
+        - code: return_already_open
+          status: 422
+          note: One open return per order.
+        - code: idempotency_key_required
+          status: 428
+          note: POST /v1/orders and POST /v1/checkout/payment-intent only; send a new UUID per attempt and reuse it on retries.
+        - code: idempotency_key_reused
+          status: 422
+          note: Same key with a different body; generate a new key.
+        - code: idempotency_in_progress
+          status: 409
+          note: Retry shortly with the same key.
+        - code: unauthenticated
+          status: 401
+        - code: not_found
+          status: 404
+          note: Framework 404. Inactive catalog rows also return a plain 404 body outside this envelope.
+    ValidationFieldErrors:
+      type: object
+      description: validation_error details; field name to messages.
+      additionalProperties:
+        type: array
+        items: { type: string }
+      example:
+        quantity: ['The quantity must be at least 1.']
+    CartItemIds:
+      type: object
+      required: [cartItemIds]
+      properties:
+        cartItemIds:
+          type: array
+          items: { type: string }
+          description: Cart line rids the client must remove or update.
+    # Per-code error schemas. Each pins `code` so a client can match on it and
+    # carries the `details` shape for that code. Responses that can emit several
+    # codes list them as oneOf.
+    ErrorValidation:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                code: { type: string, enum: [validation_error] }
+                details: { $ref: '#/components/schemas/ValidationFieldErrors' }
+    ErrorInvalidQuantity:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                code: { type: string, enum: [invalid_quantity] }
+    ErrorCurrencyMismatch:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                code: { type: string, enum: [currency_mismatch] }
+                details: { $ref: '#/components/schemas/CartItemIds' }
+    ErrorItemUnavailable:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                code: { type: string, enum: [item_unavailable] }
+                details: { $ref: '#/components/schemas/CartItemIds' }
+    ErrorInsufficientStock:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                code: { type: string, enum: [insufficient_stock] }
+                details:
+                  oneOf:
+                    - $ref: '#/components/schemas/VariantStockShortfall'
+                    - $ref: '#/components/schemas/StockShortfall'
+    ErrorPriceChanged:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                code: { type: string, enum: [price_changed] }
+                details: { $ref: '#/components/schemas/PriceChangedDetails' }
+    ErrorCartChanged:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                code: { type: string, enum: [cart_changed] }
+    ErrorPaymentMethodUnavailable:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                code: { type: string, enum: [payment_method_unavailable] }
+                details: { $ref: '#/components/schemas/PaymentMethodUnavailable' }
+    ErrorOrderNotPayable:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                code: { type: string, enum: [order_not_payable] }
+                details: { $ref: '#/components/schemas/OrderNotPayable' }
+    ErrorOrderAlreadyPaid:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                code: { type: string, enum: [order_already_paid] }
+    ErrorReturnNotAllowed:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                code: { type: string, enum: [return_not_allowed] }
+                details: { $ref: '#/components/schemas/ReturnEligibility' }
+    ErrorReturnAlreadyOpen:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                code: { type: string, enum: [return_already_open] }
+    ErrorIdempotencyKeyReused:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                code: { type: string, enum: [idempotency_key_reused] }
+    ErrorIdempotencyKeyRequired:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                code: { type: string, enum: [idempotency_key_required] }
+    PriceChangedDetails:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [cartItemId, previousPrice, price]
+            properties:
+              cartItemId: { type: string }
+              previousPrice:
+                allOf: [{ $ref: '#/components/schemas/Money' }]
+                description: What the shopper last saw.
+              price:
+                allOf: [{ $ref: '#/components/schemas/Money' }]
+                description: Current price; becomes the new previousPrice.
+    StockShortfall:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [variantRid, requested, available]
+            properties:
+              variantRid: { type: string }
+              requested: { type: integer }
+              available:
+                type: integer
+                nullable: true
+                description: Units left; null when the variant is not stock-tracked.
+    VariantStockShortfall:
+      type: object
+      required: [variantRid, available]
+      properties:
+        variantRid: { type: string }
+        available:
+          type: integer
+          nullable: true
+          description: Units left; null when the variant is not stock-tracked.
+    PaymentMethodUnavailable:
+      type: object
+      required: [paymentMethodId, currency]
+      properties:
+        paymentMethodId: { type: string }
+        currency: { type: string }
+    ReturnEligibility:
+      type: object
+      required: [eligible]
+      properties:
+        eligible: { type: boolean }
+        reason: { type: string, nullable: true }
+        windowDays: { type: integer, nullable: true }
+        deadline: { type: string, format: date-time, nullable: true }
+    OrderNotPayable:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [pending_payment, processing, shipped, delivered, cancelled] }
+    Money:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount: { type: number, description: Major units (e.g. 179 for AED 179.00). Format client-side; never parse display strings. }
+        currency: { type: string, example: AED }
+    FrozenDeliveryWording:
+      type: string
+      nullable: true
+      description: >-
+        Free-text delivery wording frozen onto the order when it was placed
+        (for example "Estimated delivery: 3-5 business days"), and the only
+        value for past orders where the window has already elapsed. Display it
+        as-is and never parse it. Current, machine-readable days for a fresh
+        quote are `shipping.deliveryDays` ({ min, max }) on the order detail and
+        the checkout endpoints; for listing-level days use `deliveryQuote`.
+    AuthUser:
+      type: object
+      required: [rid, displayName, fullName, email]
+      properties:
+        rid: { type: string }
+        displayName: { type: string }
+        fullName: { type: string }
+        email: { type: string }
+    AuthTokens:
+      type: object
+      required: [user, accessToken, refreshToken]
+      properties:
+        user: { $ref: '#/components/schemas/AuthUser' }
+        accessToken: { type: string, description: Bearer token for Authorization header. }
+        refreshToken: { type: string, description: Single-use; rotation revokes the old pair. }
+    UserProfile:
+      type: object
+      required: [fullName, email, initials, displayName, phone, rid]
+      properties:
+        fullName: { type: string }
+        email: { type: string }
+        initials: { type: string }
+        displayName: { type: string }
+        phone: { type: string, nullable: true }
+        rid: { type: string }
+    CategoryNode:
+      type: object
+      required: [rid, label, image, imageUrl, children]
+      properties:
+        rid: { type: string }
+        label: { type: string }
+        image: { type: string, nullable: true }
+        imageUrl: { type: string, nullable: true, description: Absolute URL from app.url. }
+        children:
+          type: array
+          items: { $ref: '#/components/schemas/CategoryNode' }
+    CategoryPanel:
+      allOf:
+        - $ref: '#/components/schemas/CategoryNode'
+        - type: object
+          required: [parent, sections]
+          properties:
+            parent:
+              type: object
+              nullable: true
+              required: [rid, slug, label]
+              properties:
+                rid: { type: string }
+                slug: { type: string }
+                label: { type: string }
+            sections:
+              type: array
+              description: sections[0] mirrors children.
+              items:
+                type: object
+                required: [title, children]
+                properties:
+                  title: { type: string }
+                  children:
+                    type: array
+                    items: { $ref: '#/components/schemas/CategoryNode' }
+    ProductCard:
+      type: object
+      required: [rid, categoryId, subcategory, image, imageUrl, tags, category, name, priceMoney, taxRatePercent, discountPercent, deliveryQuote, ratingValue, reviewCount, soldCount, inStock, brand, color, screenSize, attributes]
+      properties:
+        rid: { type: string }
+        categoryId: { type: string, description: Category slug (fallback rid). }
+        subcategory: { type: string, description: 'Parent category label, else empty.'}
+        image: { type: string }
+        imageUrl: { type: string, nullable: true }
+        tags:
+          type: array
+          items: { type: string }
+          description: In display order; tags[0] is the storefront badge.
+        category: { type: string, description: Category label. }
+        name: { type: string }
+        priceMoney: { $ref: '#/components/schemas/Money' }
+        priceInclTaxMoney:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/Money' }]
+          description: 'Price plus destination tax; null without a destination. Prices are tax-exclusive: show this where consumer prices must include VAT.'
+        taxRatePercent: { type: number, nullable: true, description: Combined destination rate; null without a destination. }
+        originalPriceMoney:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/Money' }]
+        discountPercent: { type: integer, nullable: true }
+        deliveryQuote:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/DeliveryQuote' }]
+        ratingValue: { type: number, description: Derived from approved reviews only; 0 with none. }
+        reviewCount: { type: integer }
+        soldCount: { type: integer, description: 'Paid, non-cancelled orders.'}
+        liked: { type: boolean, nullable: true, description: True when wishlisted; null for guests. }
+        inStock: { type: boolean, description: Default variant can supply 1 unit (untracked counts as in stock). }
+        brand: { type: string, nullable: true }
+        color: { type: string, nullable: true }
+        screenSize: { type: string, nullable: true }
+        attributes:
+          type: array
+          description: Every attribute with display label, in category order.
+          items:
+            type: object
+            required: [key, label, value]
+            properties:
+              key: { type: string }
+              label: { type: string }
+              value: { type: string }
+    DeliveryQuote:
+      type: object
+      required: [free, fee, minDays, maxDays]
+      properties:
+        free: { type: boolean }
+        fee: { $ref: '#/components/schemas/Money' }
+        minDays: { type: integer }
+        maxDays: { type: integer }
+    ProductDetail:
+      type: object
+      required: [product, images, imageUrls, ratingValue, reviewCount, soldCount, priceMoney, priceCurrency, discountNotice, modelOptions, variantOptions, variants, descriptionLines, shippingFeeMoney, deliveryDays]
+      properties:
+        product: { $ref: '#/components/schemas/ProductCard' }
+        images: { type: array, items: { type: string }, description: Relative paths; cover first. }
+        imageUrls: { type: array, items: { type: string }, description: Absolute equivalents. }
+        ratingValue: { type: number }
+        reviewCount: { type: integer }
+        soldCount: { type: integer }
+        priceMoney: { $ref: '#/components/schemas/Money' }
+        priceCurrency: { type: string }
+        discountNotice: { type: string, nullable: true, description: Staff-written sale note. }
+        modelOptions: { type: array, items: { type: string }, description: Variant names. }
+        variantOptions:
+          type: array
+          items:
+            type: object
+            required: [rid, name, size, color]
+            properties:
+              rid: { type: string }
+              name: { type: string }
+              size: { type: string, nullable: true }
+              color: { type: string, nullable: true }
+        variants:
+          type: array
+          items: { $ref: '#/components/schemas/ProductVariant' }
+        descriptionLines: { type: array, items: { type: string } }
+        shippingFeeMoney:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/Money' }]
+        deliveryDays:
+          type: object
+          nullable: true
+          required: [min, max]
+          properties:
+            min: { type: integer }
+            max: { type: integer }
+    ProductVariant:
+      type: object
+      required: [rid, name, size, color, sku, priceMoney, isDefault, stockQuantity, inStock, handlingDays, deliveryQuote]
+      properties:
+        rid: { type: string }
+        name: { type: string }
+        size: { type: string, nullable: true }
+        color: { type: string, nullable: true }
+        sku: { type: string }
+        priceMoney:
+          allOf: [{ $ref: '#/components/schemas/Money' }]
+          description: 'Variant override, else product price.'
+        priceInclTaxMoney:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/Money' }]
+        isDefault: { type: boolean, description: Used when variantId is omitted. }
+        stockQuantity: { type: integer, nullable: true, description: 'Null means not tracked (made to order, never sells out).'}
+        inStock: { type: boolean }
+        handlingDays: { type: integer, description: 'Variant value, else store default.'}
+        deliveryQuote:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/DeliveryQuote' }]
+    ProductListing:
+      type: object
+      required: [items, total, page, limit, facets]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ProductCard' }
+        total: { type: integer }
+        page: { type: integer }
+        limit: { type: integer }
+        facets:
+          type: object
+          required: [brands, colors, screenSizes, attributes, attributeLabels, delivery]
+          properties:
+            brands: { type: array, items: { type: string } }
+            colors: { type: array, items: { type: string } }
+            screenSizes: { type: array, items: { type: string } }
+            attributes: { type: object, description: Key to value list. }
+            attributeLabels: { type: object, description: Key to display label. }
+            delivery:
+              type: object
+              nullable: true
+              description: Null without a destination; hide the delivery filter then.
+              required: [freeCount, deliveryDays]
+              properties:
+                freeCount: { type: integer }
+                deliveryDays:
+                  type: array
+                  items: { type: integer }
+                  description: Distinct upper delivery-day cut-offs present in this listing; build the maxDeliveryDays filter options from it.
+    Review:
+      type: object
+      required: [rid, author, location, createdAt, rating, text, title]
+      properties:
+        rid: { type: string }
+        author: { type: string }
+        location: { type: string }
+        createdAt: { type: string, format: date-time }
+        rating: { type: integer }
+        text: { type: string, nullable: true }
+        title: { type: string, nullable: true }
+    WaitingReview:
+      type: object
+      required: [rid, productName, productImage, productImageUrl, orderId, deliveredAt, priceCurrency, priceMoney, quantity]
+      properties:
+        rid: { type: string, description: Order-line rid; send as reviewId to POST /reviews. }
+        productName: { type: string }
+        productImage: { type: string }
+        productImageUrl: { type: string, nullable: true }
+        orderId: { type: string, description: Order reference (fallback rid). }
+        deliveredAt: { type: string, format: date-time, nullable: true }
+        priceCurrency: { type: string }
+        priceMoney: { $ref: '#/components/schemas/Money' }
+        quantity: { type: integer }
+        product: { $ref: '#/components/schemas/ProductCard' }
+    ReviewedReview:
+      allOf:
+        - $ref: '#/components/schemas/Review'
+        - type: object
+          required: [status, orderId]
+          properties:
+            status: { type: string, enum: [published, pending], description: Moderation state; approved reviews publish and move rating counts. }
+            orderId: { type: string }
+            product: { $ref: '#/components/schemas/ProductCard' }
+    CartItem:
+      type: object
+      required: [rid, name, variant, variantRid, sku, image, imageUrl, currency, price, priceMoney, previousPrice, quantity, stockQuantity, available, selected, productRid]
+      properties:
+        rid: { type: string }
+        name: { type: string }
+        variant: { type: string }
+        variantRid: { type: string }
+        sku: { type: string }
+        image: { type: string }
+        imageUrl: { type: string, nullable: true }
+        currency: { type: string, description: Cart currency; lines never mix currencies. }
+        price: { type: number, description: Current unit price in major units; use priceMoney to format. }
+        priceMoney: { $ref: '#/components/schemas/Money' }
+        previousPrice:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/Money' }]
+          description: Set when the price moved since the line was added; ordering rejects with price_changed until acknowledged.
+        quantity: { type: integer }
+        stockQuantity: { type: integer, nullable: true, description: Null means untracked. }
+        available: { type: boolean, description: Purchasable and enough stock for the quantity. }
+        selected: { type: boolean, description: Only selected lines are ordered and totalled. }
+        productRid: { type: string }
+    CartSummary:
+      type: object
+      required: [itemsTotal, itemsDiscount, subtotal, shipping, tax, taxes, total, totalIncludesTax]
+      properties:
+        itemsTotal:
+          allOf: [{ $ref: '#/components/schemas/Money' }]
+          description: Pre-sale value (original prices).
+        itemsDiscount: { $ref: '#/components/schemas/Money' }
+        subtotal:
+          allOf: [{ $ref: '#/components/schemas/Money' }]
+          description: What the items actually cost.
+        shipping: { $ref: '#/components/schemas/Money' }
+        tax:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/Money' }]
+          description: Null without a destination; then total excludes tax and totalIncludesTax is false.
+        taxes:
+          type: array
+          items:
+            type: object
+            required: [name, ratePercent, amount]
+            properties:
+              name: { type: string }
+              ratePercent: { type: number }
+              amount: { $ref: '#/components/schemas/Money' }
+        total: { $ref: '#/components/schemas/Money' }
+        totalIncludesTax: { type: boolean }
+    Cart:
+      type: object
+      required: [items, summary]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CartItem' }
+        summary: { $ref: '#/components/schemas/CartSummary' }
+    CheckoutMethod:
+      type: object
+      required: [rid, code, label, icon, iconUrl]
+      properties:
+        rid: { type: string }
+        code: { type: string, description: 'Stable handle (card, mobile_money, ...); accepted as paymentMethodId.'}
+        label: { type: string }
+        icon: { type: string, nullable: true, description: Artwork key or image path. }
+        iconUrl: { type: string, nullable: true, description: Set only for uploaded/absolute icons; otherwise map the key to brand artwork. }
+        currencies: { type: array, items: { type: string }, description: Present on the checkout-methods endpoint; empty scope means everywhere. }
+        countries: { type: array, items: { type: string } }
+    OrderRecord:
+      type: object
+      required: [rid, status, paymentStatus, statusDate, placedAt, itemCount, totalMoney, productImages]
+      properties:
+        rid: { type: string }
+        status: { type: string, enum: [pending_payment, processing, shipped, delivered, cancelled], description: Fulfilment state; separate from paymentStatus. }
+        paymentStatus: { type: string, enum: [unpaid, paid, failed, refunded] }
+        statusDate: { type: string, format: date-time, nullable: true, description: Delivered/shipped/placed date matching the status. }
+        placedAt: { type: string, format: date-time, nullable: true }
+        itemCount: { type: integer }
+        totalMoney: { $ref: '#/components/schemas/Money' }
+        productImages: { type: array, items: { type: string } }
+    OrderDetail:
+      allOf:
+        - $ref: '#/components/schemas/OrderRecord'
+        - type: object
+          required: [orderId, orderReference, estimatedDelivery, paymentMethod, currency, items, totals, taxes, address, shipping, returnEligibility, returns, tracking]
+          properties:
+            orderId: { type: string }
+            orderReference: { type: string }
+            estimatedDelivery: { $ref: '#/components/schemas/FrozenDeliveryWording' }
+            paymentMethod: { type: string, nullable: true, description: Provider that settled the order. }
+            currency: { type: string }
+            items:
+              type: array
+              items:
+                type: object
+                required: [rid, productRid, name, variant, image, imageUrl, quantity, unitPrice, sku, reviewed]
+                properties:
+                  rid: { type: string, description: Send as reviewId to POST /reviews when unreviewed and delivered. }
+                  productRid: { type: string }
+                  name: { type: string }
+                  variant: { type: string }
+                  image: { type: string }
+                  imageUrl: { type: string, nullable: true }
+                  quantity: { type: integer }
+                  unitPrice: { $ref: '#/components/schemas/Money' }
+                  sku: { type: string }
+                  reviewed: { type: boolean }
+            totals:
+              type: object
+              required: [itemsTotal, itemsDiscount, shipping, tax, total]
+              properties:
+                itemsTotal: { $ref: '#/components/schemas/Money' }
+                itemsDiscount: { $ref: '#/components/schemas/Money' }
+                shipping: { $ref: '#/components/schemas/Money' }
+                tax: { $ref: '#/components/schemas/Money' }
+                total: { $ref: '#/components/schemas/Money' }
+            taxes:
+              type: array
+              items:
+                type: object
+                required: [name, ratePercent, taxable, amount]
+                properties:
+                  name: { type: string }
+                  ratePercent: { type: number }
+                  taxable: { $ref: '#/components/schemas/Money' }
+                  amount: { $ref: '#/components/schemas/Money' }
+            address: { type: object, description: 'Frozen address snapshot (contact, line1, line2, country, countryCode, names, phone).'}
+            shipping: { $ref: '#/components/schemas/OrderShippingSnapshot' }
+            returnEligibility:
+              type: object
+              required: [eligible, reason, windowDays, deadline]
+              properties:
+                eligible: { type: boolean }
+                reason: { type: string, nullable: true }
+                windowDays: { type: integer, nullable: true }
+                deadline: { type: string, format: date-time, nullable: true }
+            returns:
+              type: array
+              items:
+                type: object
+                required: [rid, status, reason]
+                properties:
+                  rid: { type: string }
+                  status: { type: string }
+                  reason: { type: string, nullable: true }
+            tracking:
+              type: array
+              items: { $ref: '#/components/schemas/TrackingEvent' }
+    OrderShippingSnapshot:
+      type: object
+      description: >-
+        Shipping quote frozen onto the order when it was placed. Unlike the
+        checkout endpoints this keeps feeMinor (an integer in minor units)
+        because it is the settled snapshot, not a display amount.
+      required: [feeMinor, deliveryDays, courierLabel]
+      properties:
+        feeMinor: { type: integer, description: Shipping fee in minor units (2000 = 20.00). }
+        deliveryDays:
+          type: object
+          nullable: true
+          required: [min, max]
+          properties:
+            min: { type: integer }
+            max: { type: integer }
+        courierLabel: { type: string, nullable: true }
+    TrackingEvent:
+      type: object
+      required: [rid, label, description, occurredAt]
+      properties:
+        rid: { type: string }
+        label: { type: string }
+        description: { type: string }
+        occurredAt: { type: string, format: date-time, nullable: true }
+    SavedPaymentMethod:
+      type: object
+      required: [rid, cardholderName, type, maskedDetail, network, isDefault]
+      properties:
+        rid: { type: string }
+        cardholderName: { type: string }
+        type: { type: string, example: visa }
+        maskedDetail: { type: string }
+        network: { type: string, nullable: true }
+        isDefault: { type: boolean }
+    Address:
+      type: object
+      required: [rid, country, countryCode, firstName, lastName, phoneCountryCode, phoneNumber, addressLine, region, city, isDefault]
+      properties:
+        rid: { type: string }
+        country: { type: string, description: Country name. }
+        countryCode: { type: string, description: 'ISO alpha-2; drives tax, shipping, delivery.'}
+        countryRid: { type: string }
+        regionRid: { type: string, nullable: true }
+        cityRid: { type: string, nullable: true }
+        firstName: { type: string }
+        lastName: { type: string }
+        phoneCountryCode: { type: string }
+        phoneNumber: { type: string }
+        addressLine: { type: string }
+        region: { type: string }
+        city: { type: string }
+        cityLine: { type: string, nullable: true }
+        isDefault: { type: boolean, description: Drives the destination for signed-in requests. }
+    NotificationSetting:
+      type: object
+      required: [id, title, description, enabled]
+      properties:
+        id:
+          type: string
+          enum: [promotions, orderUpdates]
+          description: Stable setting key, not a resource identifier.
+        title: { type: string }
+        description: { type: string }
+        enabled: { type: boolean }
+x-flows:
+  guest-to-first-order:
+    - POST /v1/cart/items (collect X-Cart-Id; empty cart adopts product currency)
+    - POST /v1/auth/register (send X-Cart-Id; guest lines merge)
+    - POST /v1/addresses (set a default address; fixes the destination)
+    - POST /v1/orders (Idempotency-Key; totals frozen, stock held; 409 price_changed means show new prices and retry with a new key)
+    - POST /v1/checkout/payment-intent (Idempotency-Key; optional paymentMethodId)
+    - redirect to checkoutUrl, then GET /v1/payments/{payment} until paid (webhook settles async)
+    - There is no account-free checkout: POST /v1/orders requires auth, so a guest cart becomes an order only after register or login. Guests can browse, cart, and quote shipping freely before that.
+  failed-payment-retry:
+    - POST /v1/checkout/payment-intent again on the same order (still pending_payment, payment failed, not paid). Never create a second order for a retry.
+  returns:
+    - GET /v1/orders/{order} (read returnEligibility) then POST /v1/orders/{order}/return with reason.
+  reviews:
+    - GET /v1/reviews/waiting (delivered lines) then POST /v1/reviews with the line rid; published after staff approval.

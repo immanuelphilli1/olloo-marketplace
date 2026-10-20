@@ -1,0 +1,19 @@
+---
+description: Request History logs every external call (success and failure). Use when adding outbound HTTP/SMTP/API integrations or debugging missing request-history rows.
+---
+
+# Request History logs success and failure
+
+**Goal:** Keep an auditable trail of what we sent to external services and what came back.
+
+## Steps
+1. For every outbound integration (mail, Stripe, Paystack, webhooks, geo, currency, S3, etc.), call `ExternalRequestLogger::logOutgoing` / `fromHttp` in a `finally` (or equivalent) so both outcomes are recorded.
+2. Always pass request payload (method/url/headers/body) plus response (`success`, status, body) and/or `exception`.
+3. Mail: success via `MessageSent` (`LogMailExternalRequest::handleMessageSent`); queued failure via `JobExceptionOccurred` on `SendQueuedMailable` (`handleJobExceptionOccurred`).
+
+## Gotchas
+- `MessageSent` only fires after SMTP accepts the message. Failures never emit it.
+- Admin Request History filtering by `success=false` is how operators find broken providers (e.g. SpaceMail rejecting `noreply@`).
+
+## What didn't work
+- Logging mail only on `MessageSent`: live invite SMTP 553s left Request History empty even though the queue retried and laravel.log had the error.

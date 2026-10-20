@@ -1,0 +1,87 @@
+name: handco
+
+# Base stack. Every service is reachable only on the internal network except the
+# gateway, which publishes on loopback for the host reverse proxy to front.
+#
+# MySQL is on the host, not in here. DB_HOST must be host.docker.internal;
+# see docker/scripts/expose-host-mysql-to-docker.sh.
+x-app-build: &app-build
+  context: ..
+  dockerfile: docker/Dockerfile
+  target: production
+
+x-app-common: &app-common
+  image: ${APP_IMAGE:-handco-app}:${IMAGE_TAG:-local}
+  build: *app-build
+  env_file:
+    - ./env/app.env
+  # host.docker.internal is how the containers reach host MySQL on 127.0.0.1.
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  networks:
+    - handco
+  restart: unless-stopped
+  # Uploads, product-import archives and logs. Shared by every release so a
+  # rollback does not take the shop's images with it.
+  volumes:
+    - storage_data:/var/www/html/storage
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "5"
+
+services:
+  app:
+    <<: *app-common
+    expose:
+      - "9000"
+
+  # Webhooks, order expiry, outbound mail.
+  queue:
+    <<: *app-common
+    command: ["php", "artisan", "queue:work", "--sleep=1", "--tries=3", "--timeout=90", "--max-time=3600"]
+    stop_grace_period: 120s
+
+  # currency:update-rates twice daily, orders:expire-unpaid every five minutes,
+  # model:prune daily.
+  scheduler:
+    <<: *app-common
+    command: ["php", "artisan", "schedule:work"]
+    stop_grace_period: 60s
+
+  gateway:
+    image: ${GATEWAY_IMAGE:-handco-gateway}:${IMAGE_TAG:-local}
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: gateway
+    depends_on:
+      app:
+        condition: service_started
+    networks:
+      - handco
+    restart: unless-stopped
+    # Uploaded images (Storage::disk('public')) live on this volume, which the
+    # app writes and the gateway serves at /storage/. Without it the gateway has
+    # no files and every product, category and banner image 404s. Read-only: the
+    # gateway never writes uploads.
+    volumes:
+      - storage_data:/var/www/html/storage:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+networks:
+  # No fixed `name:` here on purpose. A fixed name would put blue and green on
+  # the same network, and the gateway's `fastcgi_pass app:9000` would then
+  # resolve to both releases' php-fpm containers at once. Without `name:`
+  # each Compose project gets its own isolated network, so a release only
+  # talks to its own app.
+  handco:
+
+volumes:
+  storage_data:
+    name: handco_storage_data

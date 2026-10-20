@@ -1,0 +1,13 @@
+---
+description: Write and verify Laravel alter migrations for production MySQL when tests use sqlite (index/FK replacement, error 1553, half-applied migrations)
+globs: database/migrations/**
+alwaysApply: false
+---
+
+Mirror of `.claude/skills/mysql-safe-migrations/SKILL.md`. Read that file for the full steps.
+
+- Guard every `up()` step (`Schema::hasColumn/hasTable/hasIndex`) so a half-applied MySQL run can be re-run; MySQL DDL is not transactional.
+- Replacing an index a FK uses: add the new index (starting with the FK column) first, then drop the old one (else error 1553).
+- Adding an index that covers a FK column makes MySQL drop the FK's own index; `down()` must re-add a plain index (guarded by name) before dropping the unique.
+- `->change()` drops defaults you do not restate; restore them in `down()`.
+- Verify with a round trip on a scratch MySQL database (`migrate:fresh --seed`, rollback, insert legacy rows, migrate, second cycle), then drop it. sqlite tests catch none of this.

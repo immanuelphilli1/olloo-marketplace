@@ -1,0 +1,27 @@
+---
+description: Staff in-app notifications must match configured recipient emails, not all staff. Use when wiring payment/inquiry/contact/order staff alerts or editing StaffNotificationFanout / StaffInAppNotifier.
+---
+
+# Staff in-app alerts: email-matched only
+
+**Goal:** Email and in-app staff alerts go only to configured recipient addresses (matched to staff accounts by email), never to every staff user.
+
+## Steps
+
+1. Resolve recipient emails from `NotificationRecipientSettings` (admin-configured lists only; empty means nobody).
+2. Send mail only to those emails.
+3. Create in-app rows via email match:
+   - HandCO: `StaffNotificationFanout::notifyStaffEmails($emails, ...)`
+   - Transitions: `StaffInAppNotifier::notifyStaffEmails($emails, ...)`
+4. Match case-insensitively on staff `email`; skip if the address has no staff account.
+5. In tests, set recipient emails to the created staff user’s email (or assert zero in-app when lists are empty).
+
+## Gotchas
+
+- Empty recipient email list means **no** email and **no** in-app fanout (no env fallbacks).
+- Transitions abandoned purchases use the payment channel email list for both mail and in-app.
+
+## What didn't work
+
+- `User::where('user_type', 'staff')->get()` then create a notification per staff: fans out past the configured list.
+- HandCO tests using `finance@…` / `desk@…` while `makeStaff()` creates `admin-notify@…`: mail assertions can pass while in-app count is wrong (or zero after the fix).

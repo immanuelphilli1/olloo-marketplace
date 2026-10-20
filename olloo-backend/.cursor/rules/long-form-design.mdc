@@ -1,0 +1,38 @@
+---
+description: Long-form and create/edit UI follows the Fern forms playbook (sections before steps, task-based grouping, validation hierarchy).
+globs: resources/js/**/*Form*.tsx,resources/js/**/*Modal*.tsx,resources/js/Pages/**/*.tsx,resources/js/components/**/*Form*.tsx
+alwaysApply: false
+---
+
+# Long-form design
+
+When building or changing create/edit forms, modals, drawers, or multi-field settings:
+
+1. Read **`docs/DESIGN_SYSTEM.md`** (Long forms) and the live gallery **`/components/forms`**.
+2. For depth, use **`docs/design-system/long-form-design-playbook.md`** (canonical playbook), especially **§16 Validation and error handling**.
+
+## Non-negotiables
+
+- Organize around the **user task**, not the database schema.
+- **Sections before steps.** Default to a single page or `SectionHeader` sections. Use `Stepper` only for genuinely sequential stages (three or more meaningful concepts).
+- Do **not** use `Tabs` as a create-flow wizard; tabs are for views of an existing object.
+- Labels above fields; placeholders are examples only; short helpers; conservative required markers.
+- Columns only for related pairs or coupled controls. Match field width to expected input.
+- One primary action; pass `errorText` from Inertia errors on field primitives.
+
+## Validation
+
+- **Three levels:** field `errorText`, section/step error indication, form-level danger `Alert` summary.
+- On submit: show summary, jump to first invalid field, keep all field errors visible, preserve input (`preserveState`).
+- Do **not** toast-only, or scroll to the first error while leaving the rest unmarked.
+- **Helpers vs errors:** `helperText` prevents mistakes; `errorText` explains how to fix. Never use error chrome as permanent instruction.
+- Error copy is **actionable** (what to enter / how to correct), not blameful ("You entered…").
+- Pick **one** required/optional convention per surface and explain it. Fern: `required={true}` → `*`; `required={false}` → `(optional)`.
+- Validate on submit (and optionally blur), not on every keystroke for ordinary fields.
+
+## Primitives
+
+- Fields: `@/components/ui` (`Input`, `NumberInput`, `Select`, `Textarea`, `FieldLabel`, …)
+- Sections: `SectionHeader` from `@/components/ui/Divider`
+- Sequential flows: `Stepper` from `@/components/ui/Stepper`
+- Summaries: `Alert` from `@/components/ui/Alert`

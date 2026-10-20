@@ -1,0 +1,38 @@
+---
+description: Clickable UI actions must use cursor-pointer
+globs: resources/js/**/*.{ts,tsx},resources/css/**/*.css
+alwaysApply: false
+---
+
+# Cursor pointer on clickable actions
+
+Every interactive control that the user can click or activate must show `cursor-pointer` (or the design-system equivalent on a shared primitive).
+
+## Apply to
+
+- `<button>`, links styled as buttons, icon-only actions
+- Chips, tabs, listbox options, toggle rows, and other custom click targets
+- Elements with `onClick` / `role="button"` / keyboard activation that look clickable
+
+## Do not rely on
+
+- Browser defaults alone (`button { cursor: default }` in many resets)
+- Hover color or underline without a pointer cursor
+
+```tsx
+// BAD
+<button type="button" className="rounded border px-2 py-1" onClick={onSelect}>
+  Retail
+</button>
+
+// GOOD
+<button
+  type="button"
+  className="cursor-pointer rounded border px-2 py-1"
+  onClick={onSelect}
+>
+  Retail
+</button>
+```
+
+Prefer putting `cursor-pointer` on shared primitives (`Button`, `Chip` remove control, tab triggers) so call sites inherit it. Disabled controls should use `cursor-not-allowed` / `disabled:cursor-not-allowed`, not pointer.

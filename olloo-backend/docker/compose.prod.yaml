@@ -1,0 +1,64 @@
+# Production. Overlays the base file with prebuilt images and no build context:
+# CI produces the images, the server only loads and runs them, so a deploy does
+# not need the source tree or a network connection to a registry.
+#
+# Override the tags to roll a specific release:
+#   IMAGE_TAG=$(git -C /var/www/handco/current rev-parse --short HEAD) \
+#     docker compose -f docker/compose.yaml -f docker/compose.prod.yaml up -d
+#
+# `!reset` rather than `build: null`: an overlay merge does not remove a key when
+# the new value is null, so the build context would survive and the server would
+# try to build an image it has no source for. Requires Compose 2.24+.
+#
+# The release script sets COMPOSE_PROJECT_NAME so blue and green can run side by
+# side; without it every release would reuse the `handco` project and recreate the
+# same containers, which is exactly what stops a deploy from being zero downtime.
+
+services:
+  app:
+    build: !reset null
+    restart: unless-stopped
+    volumes:
+      # The same storefront build the gateway serves. StorefrontPageController
+      # reads its index.html to serve home, category and product pages with meta
+      # tags filled in. Without it those pages fall back to the plain SPA (the
+      # gateway's error_page) and lose their SEO tags, with an error in the log.
+      - ${WEB_ROOT:-/var/www/handco/shared/web}:/var/www/html/web:ro
+
+  queue:
+    build: !reset null
+    restart: unless-stopped
+
+  scheduler:
+    build: !reset null
+    restart: unless-stopped
+
+  gateway:
+    build: !reset null
+    restart: unless-stopped
+    # The gateway templating needs ADMIN_PATH_PREFIX. The app reads it from its own
+    # env_file, but the gateway has none in the base file, so give it the same one.
+    env_file:
+      - ./env/app.env
+    environment:
+      # Mirrors the ENV in the gateway image. Set here too so an operator can
+      # override it, and so the value is visible in `compose config`.
+      NGINX_ENVSUBST_FILTER: "^ADMIN_PATH_PREFIX$"
+    volumes:
+      # The storefront build, published by docker/scripts/publish-web.sh. A host
+      # path rather than a named volume on purpose: Compose namespaces named
+      # volumes per project, and release.sh sets a different COMPOSE_PROJECT_NAME
+      # for blue and green, so a named volume would give each release its own
+      # empty storefront and a rollback would silently serve the wrong build.
+      #
+      # Read-only, so a compromised gateway cannot rewrite the build, and shared
+      # by both colours, so rolling the API back never rolls the storefront back.
+      - ${WEB_ROOT:-/var/www/handco/shared/web}:/var/www/html/web:ro
+    ports:
+      # Loopback only. The host reverse proxy is the public entry point; see
+      # docs/DEPLOYING.md. Never publish this on a public interface.
+      #
+      # 8031 and 8032 are HandCO's blue/green pair, alternated by
+      # docker/scripts/release.sh. Pick a range nothing else on the host uses:
+      # qr-phoenix takes 8020, and another project's stack already holds 8021.
+      - "127.0.0.1:${GATEWAY_PORT:-8031}:80"

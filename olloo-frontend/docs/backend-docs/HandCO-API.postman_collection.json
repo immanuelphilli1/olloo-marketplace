@@ -1,0 +1,6195 @@
+{
+  "info": {
+    "name": "HandCO API",
+    "description": "Full /api/v1 collection for H&CO ecommerce. All client-facing ids are **rids**. Spec fields productId/addressId are rid strings.\n\nImport HandCO.local environment and set baseUrl. Run folder scripts or Flows under postman/flows/.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://handco.craftsmanjohn.com/api/v1"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "cartRid",
+      "value": ""
+    },
+    {
+      "key": "userRid",
+      "value": ""
+    },
+    {
+      "key": "productRid",
+      "value": ""
+    },
+    {
+      "key": "variantRid",
+      "value": ""
+    },
+    {
+      "key": "cartItemRid",
+      "value": ""
+    },
+    {
+      "key": "addressRid",
+      "value": ""
+    },
+    {
+      "key": "orderRid",
+      "value": ""
+    },
+    {
+      "key": "paymentRid",
+      "value": ""
+    },
+    {
+      "key": "paymentMethodRid",
+      "value": ""
+    },
+    {
+      "key": "categoryRid",
+      "value": "electronics"
+    },
+    {
+      "key": "reviewRid",
+      "value": ""
+    },
+    {
+      "key": "unsubscribeToken",
+      "value": ""
+    },
+    {
+      "key": "webhookBaseUrl",
+      "value": "https://handco.craftsmanjohn.com"
+    },
+    {
+      "key": "regionRid",
+      "value": ""
+    },
+    {
+      "key": "historyRid",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Bearer accessToken on protected routes. Login/register capture tokens.",
+      "item": [
+        {
+          "name": "Check email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/check-email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "check-email"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@handco.test\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@handco.test\",\n  \"password\": \"password\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const j = pm.response.json();",
+                  "  const access = j.accessToken || (j.data && j.data.accessToken);",
+                  "  const refresh = j.refreshToken || (j.data && j.data.refreshToken);",
+                  "  const user = j.user || (j.data && j.data.user);",
+                  "  // Environment vars shadow collection vars in Postman resolution order.",
+                  "  // Write both so Auth tab {{accessToken}} resolves after Login.",
+                  "  if (access) {",
+                  "    pm.collectionVariables.set('accessToken', access);",
+                  "    pm.environment.set('accessToken', access);",
+                  "  }",
+                  "  if (refresh) {",
+                  "    pm.collectionVariables.set('refreshToken', refresh);",
+                  "    pm.environment.set('refreshToken', refresh);",
+                  "  }",
+                  "  if (user && user.rid) {",
+                  "    pm.collectionVariables.set('userRid', user.rid);",
+                  "    pm.environment.set('userRid', user.rid);",
+                  "  }",
+                  "  pm.test('captured accessToken', () => pm.expect(Boolean(access)).to.eql(true));",
+                  "} else {",
+                  "  console.warn('Auth response did not return tokens', pm.response.code, pm.response.text());",
+                  "}",
+                  "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@handco.test\",\n  \"password\": \"Password1!\",\n  \"password_confirmation\": \"Password1!\",\n  \"fullName\": \"New User\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const j = pm.response.json();",
+                  "  const access = j.accessToken || (j.data && j.data.accessToken);",
+                  "  const refresh = j.refreshToken || (j.data && j.data.refreshToken);",
+                  "  const user = j.user || (j.data && j.data.user);",
+                  "  // Environment vars shadow collection vars in Postman resolution order.",
+                  "  // Write both so Auth tab {{accessToken}} resolves after Login.",
+                  "  if (access) {",
+                  "    pm.collectionVariables.set('accessToken', access);",
+                  "    pm.environment.set('accessToken', access);",
+                  "  }",
+                  "  if (refresh) {",
+                  "    pm.collectionVariables.set('refreshToken', refresh);",
+                  "    pm.environment.set('refreshToken', refresh);",
+                  "  }",
+                  "  if (user && user.rid) {",
+                  "    pm.collectionVariables.set('userRid', user.rid);",
+                  "    pm.environment.set('userRid', user.rid);",
+                  "  }",
+                  "  pm.test('captured accessToken', () => pm.expect(Boolean(access)).to.eql(true));",
+                  "} else {",
+                  "  console.warn('Auth response did not return tokens', pm.response.code, pm.response.text());",
+                  "}",
+                  "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "OAuth Google",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/oauth/google",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "oauth",
+                "google"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"test-token\",\n  \"email\": \"oauth@handco.test\",\n  \"fullName\": \"OAuth User\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const j = pm.response.json();",
+                  "  const access = j.accessToken || (j.data && j.data.accessToken);",
+                  "  const refresh = j.refreshToken || (j.data && j.data.refreshToken);",
+                  "  const user = j.user || (j.data && j.data.user);",
+                  "  // Environment vars shadow collection vars in Postman resolution order.",
+                  "  // Write both so Auth tab {{accessToken}} resolves after Login.",
+                  "  if (access) {",
+                  "    pm.collectionVariables.set('accessToken', access);",
+                  "    pm.environment.set('accessToken', access);",
+                  "  }",
+                  "  if (refresh) {",
+                  "    pm.collectionVariables.set('refreshToken', refresh);",
+                  "    pm.environment.set('refreshToken', refresh);",
+                  "  }",
+                  "  if (user && user.rid) {",
+                  "    pm.collectionVariables.set('userRid', user.rid);",
+                  "    pm.environment.set('userRid', user.rid);",
+                  "  }",
+                  "  pm.test('captured accessToken', () => pm.expect(Boolean(access)).to.eql(true));",
+                  "} else {",
+                  "  console.warn('Auth response did not return tokens', pm.response.code, pm.response.text());",
+                  "}",
+                  "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const j = pm.response.json();",
+                  "  const access = j.accessToken || (j.data && j.data.accessToken);",
+                  "  const refresh = j.refreshToken || (j.data && j.data.refreshToken);",
+                  "  const user = j.user || (j.data && j.data.user);",
+                  "  // Environment vars shadow collection vars in Postman resolution order.",
+                  "  // Write both so Auth tab {{accessToken}} resolves after Login.",
+                  "  if (access) {",
+                  "    pm.collectionVariables.set('accessToken', access);",
+                  "    pm.environment.set('accessToken', access);",
+                  "  }",
+                  "  if (refresh) {",
+                  "    pm.collectionVariables.set('refreshToken', refresh);",
+                  "    pm.environment.set('refreshToken', refresh);",
+                  "  }",
+                  "  if (user && user.rid) {",
+                  "    pm.collectionVariables.set('userRid', user.rid);",
+                  "    pm.environment.set('userRid', user.rid);",
+                  "  }",
+                  "  pm.test('captured accessToken', () => pm.expect(Boolean(access)).to.eql(true));",
+                  "} else {",
+                  "  console.warn('Auth response did not return tokens', pm.response.code, pm.response.text());",
+                  "}",
+                  "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Forgot password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@handco.test\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@handco.test\",\n  \"token\": \"reset-token\",\n  \"password\": \"Password1!\",\n  \"password_confirmation\": \"Password1!\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Catalog",
+      "description": "",
+      "item": [
+        {
+          "name": "List categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories"
+              ]
+            },
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code===200){const c=pm.response.json().categories||[]; if(c[0]) pm.collectionVariables.set('categoryRid', c[0].id || c[0].rid);}",
+                  "pm.test('ok',()=>pm.expect(pm.response.code).to.eql(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Category panel",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories/{{categoryRid}}/panel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "{{categoryRid}}",
+                "panel"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "List products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products?page=1&limit=20&categoryId=electronics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "categoryId",
+                  "value": "electronics"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  const items = j.items || [];",
+                  "  if (items[0] && items[0].rid) pm.collectionVariables.set('productRid', items[0].rid);",
+                  "}",
+                  "pm.test('status ok', () => pm.expect(pm.response.code).to.eql(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Featured products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/featured",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "featured"
+              ]
+            },
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  const items = j.items || [];",
+                  "  if (items[0] && items[0].rid) pm.collectionVariables.set('productRid', items[0].rid);",
+                  "}",
+                  "pm.test('status ok', () => pm.expect(pm.response.code).to.eql(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "New arrivals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/new-arrivals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "new-arrivals"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Product detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productRid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productRid}}"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Related products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productRid}}/related",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productRid}}",
+                "related"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Product reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productRid}}/reviews?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productRid}}",
+                "reviews"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Recommendations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/recommendations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "recommendations"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "description": "",
+      "item": [
+        {
+          "name": "Search products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/search?q=earbuds&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "earbuds"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  const items = j.items || [];",
+                  "  if (items[0] && items[0].rid) pm.collectionVariables.set('productRid', items[0].rid);",
+                  "}",
+                  "pm.test('status ok', () => pm.expect(pm.response.code).to.eql(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Suggestions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/search/suggestions?q=aero",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "suggestions"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "aero"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "description": "Send X-Cart-Id with cartRid. Add item captures cartRid from response header.",
+      "item": [
+        {
+          "name": "Get cart",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Cart-Id",
+                "value": "{{cartRid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cart",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cart"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Add item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Cart-Id",
+                "value": "{{cartRid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cart/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cart",
+                "items"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productRid}}\",\n  \"quantity\": 1\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cartRid = pm.response.headers.get('X-Cart-Id');",
+                  "if (cartRid) pm.collectionVariables.set('cartRid', cartRid);",
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.items && j.items[0]) {",
+                  "    pm.collectionVariables.set('cartItemRid', j.items[0].rid);",
+                  "    if (j.items[0].productRid) pm.collectionVariables.set('productRid', j.items[0].productRid);",
+                  "  }",
+                  "}",
+                  "pm.test('status ok', () => pm.expect(pm.response.code).to.eql(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Cart-Id",
+                "value": "{{cartRid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cart/items/{{cartItemRid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cart",
+                "items",
+                "{{cartItemRid}}"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 2,\n  \"selected\": true\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Select all",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Cart-Id",
+                "value": "{{cartRid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cart/items/select-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cart",
+                "items",
+                "select-all"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"selected\": true\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove selected",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Cart-Id",
+                "value": "{{cartRid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cart/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cart",
+                "items"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Remove item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Cart-Id",
+                "value": "{{cartRid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cart/items/{{cartItemRid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cart",
+                "items",
+                "{{cartItemRid}}"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Move to wishlist",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Cart-Id",
+                "value": "{{cartRid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cart/items/move-to-wishlist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cart",
+                "items",
+                "move-to-wishlist"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Merge guest cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Cart-Id",
+                "value": "{{cartRid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cart/merge",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cart",
+                "merge"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cartRid = pm.response.headers.get('X-Cart-Id');",
+                  "if (cartRid) pm.collectionVariables.set('cartRid', cartRid);",
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.items && j.items[0]) {",
+                  "    pm.collectionVariables.set('cartItemRid', j.items[0].rid);",
+                  "    if (j.items[0].productRid) pm.collectionVariables.set('productRid', j.items[0].productRid);",
+                  "  }",
+                  "}",
+                  "pm.test('status ok', () => pm.expect(pm.response.code).to.eql(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Wishlist",
+      "description": "",
+      "item": [
+        {
+          "name": "List wishlist",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wishlist?category=&minRating=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wishlist"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": ""
+                },
+                {
+                  "key": "minRating",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Wishlist categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wishlist/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wishlist",
+                "categories"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add to wishlist",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wishlist/{{productRid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wishlist",
+                "{{productRid}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove from wishlist",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wishlist/{{productRid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wishlist",
+                "{{productRid}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Checkout",
+      "description": "",
+      "item": [
+        {
+          "name": "Preview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Cart-Id",
+                "value": "{{cartRid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/checkout/preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "checkout",
+                "preview"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Shipping quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Cart-Id",
+                "value": "{{cartRid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/checkout/shipping-quote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "checkout",
+                "shipping-quote"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"addressRid\": \"{{addressRid}}\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Payment intent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Cart-Id",
+                "value": "{{cartRid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/checkout/payment-intent",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "checkout",
+                "payment-intent"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"callbackUrl\": \"http://localhost:5173/checkout/return\",\n  \"cancelUrl\": \"http://localhost:5173/checkout/cancel\",\n  \"email\": \"demo@handco.test\",\n  \"paymentMethodId\": \"card\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.paymentRid) pm.collectionVariables.set('paymentRid', j.paymentRid);",
+                  "}",
+                  "pm.test('status ok', () => pm.expect(pm.response.code).to.eql(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "description": "",
+      "item": [
+        {
+          "name": "Place order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Cart-Id",
+                "value": "{{cartRid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"addressId\": \"{{addressRid}}\",\n  \"paymentMethodId\": \"card\",\n  \"cartItemIds\": [\n    \"{{cartItemRid}}\"\n  ]\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.orderId) pm.collectionVariables.set('orderRid', j.orderId);",
+                  "  if (j.rid) pm.collectionVariables.set('orderRid', j.rid);",
+                  "  if (j.orders && j.orders[0]) pm.collectionVariables.set('orderRid', j.orders[0].rid || j.orders[0].id);",
+                  "}",
+                  "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders?status=all&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "all"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.orderId) pm.collectionVariables.set('orderRid', j.orderId);",
+                  "  if (j.rid) pm.collectionVariables.set('orderRid', j.rid);",
+                  "  if (j.orders && j.orders[0]) pm.collectionVariables.set('orderRid', j.orders[0].rid || j.orders[0].id);",
+                  "}",
+                  "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Order detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{orderRid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{orderRid}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buy again products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/buy-again",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "buy-again"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buy again from order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Cart-Id",
+                "value": "{{cartRid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{orderRid}}/buy-again",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{orderRid}}",
+                "buy-again"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Return request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{orderRid}}/return",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{orderRid}}",
+                "return"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Changed mind\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Tracking",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{orderRid}}/tracking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{orderRid}}",
+                "tracking"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "description": "",
+      "item": [
+        {
+          "name": "Get profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "profile"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "profile"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Demo Customer\",\n  \"displayName\": \"Demo\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Security",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/security",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "security"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update email",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "email"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo2@handco.test\",\n  \"password\": \"password\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update phone",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/phone",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "phone"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+971501234567\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update password",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "password"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"password\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Enable 2FA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/2fa/enable",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "2fa",
+                "enable"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Disable 2FA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/2fa/disable",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "2fa",
+                "disable"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"000000\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Addresses",
+      "description": "",
+      "item": [
+        {
+          "name": "Lookup countries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/addresses/lookup/countries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addresses",
+                "lookup",
+                "countries"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Lookup regions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/addresses/lookup/regions?country=AE",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addresses",
+                "lookup",
+                "regions"
+              ],
+              "query": [
+                {
+                  "key": "country",
+                  "value": "AE"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Lookup cities",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/addresses/lookup/cities?region={{regionRid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addresses",
+                "lookup",
+                "cities"
+              ],
+              "query": [
+                {
+                  "key": "region",
+                  "value": "{{regionRid}}"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "List addresses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/addresses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addresses"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/addresses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addresses"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"country\": \"AE\",\n  \"firstName\": \"Demo\",\n  \"lastName\": \"Customer\",\n  \"phoneCountryCode\": \"+971\",\n  \"phoneNumber\": \"501234567\",\n  \"addressLine\": \"Hse 8 M Street\",\n  \"region\": \"Dubai\",\n  \"city\": \"Dubai\",\n  \"isDefault\": true\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  const rid = j.rid || (j.items && j.items[0] && j.items[0].rid);",
+                  "  if (rid) pm.collectionVariables.set('addressRid', rid);",
+                  "}",
+                  "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update address",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/addresses/{{addressRid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addresses",
+                "{{addressRid}}"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"city\": \"Abu Dhabi\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set default",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/addresses/{{addressRid}}/default",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addresses",
+                "{{addressRid}}",
+                "default"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Duplicate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/addresses/{{addressRid}}/duplicate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addresses",
+                "{{addressRid}}",
+                "duplicate"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete address",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/addresses/{{addressRid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addresses",
+                "{{addressRid}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payment Methods",
+      "description": "",
+      "item": [
+        {
+          "name": "Networks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payment-methods/networks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment-methods",
+                "networks"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payment-methods",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment-methods"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payment-methods",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment-methods"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"visa\",\n  \"cardholderName\": \"Demo Customer\",\n  \"maskedDetail\": \"****4242\",\n  \"network\": \"visa\",\n  \"token\": \"tok_test\",\n  \"isDefault\": true\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.response.code===201||pm.response.code===200){const j=pm.response.json(); const r=j.rid||j.id; if(r) pm.collectionVariables.set('paymentMethodRid', r);}",
+                  "pm.test('ok',()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payment-methods/{{paymentMethodRid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment-methods",
+                "{{paymentMethodRid}}"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cardholderName\": \"Demo C\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set default",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payment-methods/{{paymentMethodRid}}/default",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment-methods",
+                "{{paymentMethodRid}}",
+                "default"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payment-methods/{{paymentMethodRid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment-methods",
+                "{{paymentMethodRid}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "description": "",
+      "item": [
+        {
+          "name": "Waiting",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/waiting",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews",
+                "waiting"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.response.code===200){const j=pm.response.json(); const items=j.items||j.reviews||[]; if(items[0]) pm.collectionVariables.set('reviewRid', items[0].rid||items[0].id);}",
+                  "pm.test('ok',()=>pm.expect(pm.response.code).to.eql(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reviewed",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/reviewed",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews",
+                "reviewed"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submit review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewId\": \"{{reviewRid}}\",\n  \"rating\": 5,\n  \"title\": \"Great\",\n  \"detailedReview\": \"Would buy again.\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Browsing History",
+      "description": "",
+      "item": [
+        {
+          "name": "Record view",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Cart-Id",
+                "value": "{{cartRid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/browsing-history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "browsing-history"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productRid}}\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List history",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/browsing-history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "browsing-history"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete selected",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/browsing-history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "browsing-history"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rids\": [\n    \"{{historyRid}}\"\n  ]\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Clear all",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/browsing-history/all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "browsing-history",
+                "all"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "description": "",
+      "item": [
+        {
+          "name": "Get settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "settings"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle promotions",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/settings/promotions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "settings",
+                "promotions"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": false\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle order updates",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/settings/orderUpdates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "settings",
+                "orderUpdates"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "CMS",
+      "description": "",
+      "item": [
+        {
+          "name": "Home content",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/content/home",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "content",
+                "home"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Footer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/content/footer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "content",
+                "footer"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Privacy policy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/content/pages/privacy-policy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "content",
+                "pages",
+                "privacy-policy"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "About",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/content/pages/about",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "content",
+                "pages",
+                "about"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Newsletter",
+      "description": "",
+      "item": [
+        {
+          "name": "Subscribe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/newsletter/subscribe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "newsletter",
+                "subscribe"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"news@handco.test\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.response.code===200||pm.response.code===201){const j=pm.response.json(); if(j.unsubscribeToken) pm.collectionVariables.set('unsubscribeToken', j.unsubscribeToken);}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unsubscribe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/newsletter/unsubscribe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "newsletter",
+                "unsubscribe"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{unsubscribeToken}}\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Placeholders",
+      "description": "",
+      "item": [
+        {
+          "name": "Partnership inquiry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/partnerships/inquiries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "partnerships",
+                "inquiries"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"p@test.com\",\n  \"name\": \"Partner\",\n  \"message\": \"Hi\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Quotation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/quotations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "quotations"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"q@test.com\",\n  \"details\": \"Need quote\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Agent request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/support/agent-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "support",
+                "agent-requests"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"a@test.com\",\n  \"message\": \"Help\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "description": "Outside /api/v1. Use webhookBaseUrl=https://handco.craftsmanjohn.com",
+      "item": [
+        {
+          "name": "Fake payment webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"evt_test_1\",\n  \"event\": \"charge.success\",\n  \"reference\": \"{{paymentRid}}\",\n  \"paid\": true\n}"
+            },
+            "url": {
+              "raw": "{{webhookBaseUrl}}/webhooks/fake",
+              "host": [
+                "{{webhookBaseUrl}}"
+              ],
+              "path": [
+                "webhooks",
+                "fake"
+              ]
+            },
+            "description": "Server-to-server. No customer auth. Settles payment by payment rid reference."
+          },
+          "response": []
+        },
+        {
+          "name": "Stripe webhook (sample)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Stripe-Signature",
+                "value": "t=0,v1=test",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"evt_stripe\",\n  \"type\": \"checkout.session.completed\",\n  \"data\": { \"object\": { \"id\": \"cs_test\", \"metadata\": { \"payment_rid\": \"{{paymentRid}}\" } } }\n}"
+            },
+            "url": {
+              "raw": "{{webhookBaseUrl}}/webhooks/stripe",
+              "host": [
+                "{{webhookBaseUrl}}"
+              ],
+              "path": [
+                "webhooks",
+                "stripe"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Paystack webhook (sample)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "x-paystack-signature",
+                "value": "test",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"charge.success\",\n  \"data\": { \"reference\": \"{{paymentRid}}\", \"id\": 123 }\n}"
+            },
+            "url": {
+              "raw": "{{webhookBaseUrl}}/webhooks/paystack",
+              "host": [
+                "{{webhookBaseUrl}}"
+              ],
+              "path": [
+                "webhooks",
+                "paystack"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Flows",
+      "description": "Ordered journeys for Collection Runner. Select a flow folder and Run. Variables are shared across steps via collection variables (rids/tokens).",
+      "item": [
+        {
+          "name": "01 Auth lifecycle",
+          "description": "check-email \u2192 login \u2192 me \u2192 refresh \u2192 logout",
+          "item": [
+            {
+              "name": "Check email",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/check-email",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "check-email"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"demo@handco.test\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Login",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"demo@handco.test\",\n  \"password\": \"password\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "  const j = pm.response.json();",
+                      "  const access = j.accessToken || (j.data && j.data.accessToken);",
+                      "  const refresh = j.refreshToken || (j.data && j.data.refreshToken);",
+                      "  const user = j.user || (j.data && j.data.user);",
+                      "  // Environment vars shadow collection vars in Postman resolution order.",
+                      "  // Write both so Auth tab {{accessToken}} resolves after Login.",
+                      "  if (access) {",
+                      "    pm.collectionVariables.set('accessToken', access);",
+                      "    pm.environment.set('accessToken', access);",
+                      "  }",
+                      "  if (refresh) {",
+                      "    pm.collectionVariables.set('refreshToken', refresh);",
+                      "    pm.environment.set('refreshToken', refresh);",
+                      "  }",
+                      "  if (user && user.rid) {",
+                      "    pm.collectionVariables.set('userRid', user.rid);",
+                      "    pm.environment.set('userRid', user.rid);",
+                      "  }",
+                      "  pm.test('captured accessToken', () => pm.expect(Boolean(access)).to.eql(true));",
+                      "} else {",
+                      "  console.warn('Auth response did not return tokens', pm.response.code, pm.response.text());",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Me",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "me"
+                  ]
+                },
+                "description": "",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Refresh",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/refresh",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "refresh"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "  const j = pm.response.json();",
+                      "  const access = j.accessToken || (j.data && j.data.accessToken);",
+                      "  const refresh = j.refreshToken || (j.data && j.data.refreshToken);",
+                      "  const user = j.user || (j.data && j.data.user);",
+                      "  // Environment vars shadow collection vars in Postman resolution order.",
+                      "  // Write both so Auth tab {{accessToken}} resolves after Login.",
+                      "  if (access) {",
+                      "    pm.collectionVariables.set('accessToken', access);",
+                      "    pm.environment.set('accessToken', access);",
+                      "  }",
+                      "  if (refresh) {",
+                      "    pm.collectionVariables.set('refreshToken', refresh);",
+                      "    pm.environment.set('refreshToken', refresh);",
+                      "  }",
+                      "  if (user && user.rid) {",
+                      "    pm.collectionVariables.set('userRid', user.rid);",
+                      "    pm.environment.set('userRid', user.rid);",
+                      "  }",
+                      "  pm.test('captured accessToken', () => pm.expect(Boolean(access)).to.eql(true));",
+                      "} else {",
+                      "  console.warn('Auth response did not return tokens', pm.response.code, pm.response.text());",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Logout",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/logout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "logout"
+                  ]
+                },
+                "description": "",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "02 Catalog discovery",
+          "description": "categories \u2192 panel \u2192 products \u2192 detail \u2192 related \u2192 reviews \u2192 search",
+          "item": [
+            {
+              "name": "List categories",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/categories",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "categories"
+                  ]
+                },
+                "description": ""
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code===200){const c=pm.response.json().categories||[]; if(c[0]) pm.collectionVariables.set('categoryRid', c[0].id || c[0].rid);}",
+                      "pm.test('ok',()=>pm.expect(pm.response.code).to.eql(200));",
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Category panel",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/categories/{{categoryRid}}/panel",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "categories",
+                    "{{categoryRid}}",
+                    "panel"
+                  ]
+                },
+                "description": ""
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "List products",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/products?page=1&limit=20&categoryId=electronics",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "products"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "key": "categoryId",
+                      "value": "electronics"
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "  const j = pm.response.json();",
+                      "  const items = j.items || [];",
+                      "  if (items[0] && items[0].rid) pm.collectionVariables.set('productRid', items[0].rid);",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.eql(200));",
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Product detail",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/products/{{productRid}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "products",
+                    "{{productRid}}"
+                  ]
+                },
+                "description": ""
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Related products",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/products/{{productRid}}/related",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "products",
+                    "{{productRid}}",
+                    "related"
+                  ]
+                },
+                "description": ""
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Product reviews",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/products/{{productRid}}/reviews?page=1&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "products",
+                    "{{productRid}}",
+                    "reviews"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Suggestions",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/search/suggestions?q=aero",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "search",
+                    "suggestions"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "aero"
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Search products",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/products/search?q=earbuds&page=1&limit=20",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "products",
+                    "search"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "earbuds"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "  const j = pm.response.json();",
+                      "  const items = j.items || [];",
+                      "  if (items[0] && items[0].rid) pm.collectionVariables.set('productRid', items[0].rid);",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.eql(200));",
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "03 Guest browse \u2192 cart \u2192 merge",
+          "description": "list products \u2192 add item \u2192 login \u2192 merge \u2192 get cart",
+          "item": [
+            {
+              "name": "List products",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/products?page=1&limit=20&categoryId=electronics",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "products"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "key": "categoryId",
+                      "value": "electronics"
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "  const j = pm.response.json();",
+                      "  const items = j.items || [];",
+                      "  if (items[0] && items[0].rid) pm.collectionVariables.set('productRid', items[0].rid);",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.eql(200));",
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Add item",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Cart-Id",
+                    "value": "{{cartRid}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/cart/items",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "cart",
+                    "items"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"productId\": \"{{productRid}}\",\n  \"quantity\": 1\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const cartRid = pm.response.headers.get('X-Cart-Id');",
+                      "if (cartRid) pm.collectionVariables.set('cartRid', cartRid);",
+                      "if (pm.response.code === 200) {",
+                      "  const j = pm.response.json();",
+                      "  if (j.items && j.items[0]) {",
+                      "    pm.collectionVariables.set('cartItemRid', j.items[0].rid);",
+                      "    if (j.items[0].productRid) pm.collectionVariables.set('productRid', j.items[0].productRid);",
+                      "  }",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.eql(200));",
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Login",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"demo@handco.test\",\n  \"password\": \"password\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "  const j = pm.response.json();",
+                      "  const access = j.accessToken || (j.data && j.data.accessToken);",
+                      "  const refresh = j.refreshToken || (j.data && j.data.refreshToken);",
+                      "  const user = j.user || (j.data && j.data.user);",
+                      "  // Environment vars shadow collection vars in Postman resolution order.",
+                      "  // Write both so Auth tab {{accessToken}} resolves after Login.",
+                      "  if (access) {",
+                      "    pm.collectionVariables.set('accessToken', access);",
+                      "    pm.environment.set('accessToken', access);",
+                      "  }",
+                      "  if (refresh) {",
+                      "    pm.collectionVariables.set('refreshToken', refresh);",
+                      "    pm.environment.set('refreshToken', refresh);",
+                      "  }",
+                      "  if (user && user.rid) {",
+                      "    pm.collectionVariables.set('userRid', user.rid);",
+                      "    pm.environment.set('userRid', user.rid);",
+                      "  }",
+                      "  pm.test('captured accessToken', () => pm.expect(Boolean(access)).to.eql(true));",
+                      "} else {",
+                      "  console.warn('Auth response did not return tokens', pm.response.code, pm.response.text());",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Merge guest cart",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Cart-Id",
+                    "value": "{{cartRid}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/cart/merge",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "cart",
+                    "merge"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const cartRid = pm.response.headers.get('X-Cart-Id');",
+                      "if (cartRid) pm.collectionVariables.set('cartRid', cartRid);",
+                      "if (pm.response.code === 200) {",
+                      "  const j = pm.response.json();",
+                      "  if (j.items && j.items[0]) {",
+                      "    pm.collectionVariables.set('cartItemRid', j.items[0].rid);",
+                      "    if (j.items[0].productRid) pm.collectionVariables.set('productRid', j.items[0].productRid);",
+                      "  }",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.eql(200));",
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Get cart",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Cart-Id",
+                    "value": "{{cartRid}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/cart",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "cart"
+                  ]
+                },
+                "description": ""
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "04 Checkout happy path",
+          "description": "login \u2192 address \u2192 cart \u2192 preview \u2192 shipping \u2192 payment-intent \u2192 place order \u2192 get order",
+          "item": [
+            {
+              "name": "Login",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"demo@handco.test\",\n  \"password\": \"password\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "  const j = pm.response.json();",
+                      "  const access = j.accessToken || (j.data && j.data.accessToken);",
+                      "  const refresh = j.refreshToken || (j.data && j.data.refreshToken);",
+                      "  const user = j.user || (j.data && j.data.user);",
+                      "  // Environment vars shadow collection vars in Postman resolution order.",
+                      "  // Write both so Auth tab {{accessToken}} resolves after Login.",
+                      "  if (access) {",
+                      "    pm.collectionVariables.set('accessToken', access);",
+                      "    pm.environment.set('accessToken', access);",
+                      "  }",
+                      "  if (refresh) {",
+                      "    pm.collectionVariables.set('refreshToken', refresh);",
+                      "    pm.environment.set('refreshToken', refresh);",
+                      "  }",
+                      "  if (user && user.rid) {",
+                      "    pm.collectionVariables.set('userRid', user.rid);",
+                      "    pm.environment.set('userRid', user.rid);",
+                      "  }",
+                      "  pm.test('captured accessToken', () => pm.expect(Boolean(access)).to.eql(true));",
+                      "} else {",
+                      "  console.warn('Auth response did not return tokens', pm.response.code, pm.response.text());",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "List products",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/products?page=1&limit=20&categoryId=electronics",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "products"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "key": "categoryId",
+                      "value": "electronics"
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "  const j = pm.response.json();",
+                      "  const items = j.items || [];",
+                      "  if (items[0] && items[0].rid) pm.collectionVariables.set('productRid', items[0].rid);",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.eql(200));",
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Add item",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Cart-Id",
+                    "value": "{{cartRid}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/cart/items",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "cart",
+                    "items"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"productId\": \"{{productRid}}\",\n  \"quantity\": 1\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const cartRid = pm.response.headers.get('X-Cart-Id');",
+                      "if (cartRid) pm.collectionVariables.set('cartRid', cartRid);",
+                      "if (pm.response.code === 200) {",
+                      "  const j = pm.response.json();",
+                      "  if (j.items && j.items[0]) {",
+                      "    pm.collectionVariables.set('cartItemRid', j.items[0].rid);",
+                      "    if (j.items[0].productRid) pm.collectionVariables.set('productRid', j.items[0].productRid);",
+                      "  }",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.eql(200));",
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Create address",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/addresses",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "addresses"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"country\": \"AE\",\n  \"firstName\": \"Demo\",\n  \"lastName\": \"Customer\",\n  \"phoneCountryCode\": \"+971\",\n  \"phoneNumber\": \"501234567\",\n  \"addressLine\": \"Hse 8 M Street\",\n  \"region\": \"Dubai\",\n  \"city\": \"Dubai\",\n  \"isDefault\": true\n}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201 || pm.response.code === 200) {",
+                      "  const j = pm.response.json();",
+                      "  const rid = j.rid || (j.items && j.items[0] && j.items[0].rid);",
+                      "  if (rid) pm.collectionVariables.set('addressRid', rid);",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Preview",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Cart-Id",
+                    "value": "{{cartRid}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/checkout/preview",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "checkout",
+                    "preview"
+                  ]
+                },
+                "description": ""
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Shipping quote",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Cart-Id",
+                    "value": "{{cartRid}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/checkout/shipping-quote",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "checkout",
+                    "shipping-quote"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"addressRid\": \"{{addressRid}}\"\n}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Payment intent",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Cart-Id",
+                    "value": "{{cartRid}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/checkout/payment-intent",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "checkout",
+                    "payment-intent"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"callbackUrl\": \"http://localhost:5173/checkout/return\",\n  \"cancelUrl\": \"http://localhost:5173/checkout/cancel\",\n  \"email\": \"demo@handco.test\",\n  \"paymentMethodId\": \"card\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "  const j = pm.response.json();",
+                      "  if (j.paymentRid) pm.collectionVariables.set('paymentRid', j.paymentRid);",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.eql(200));",
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Place order",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Cart-Id",
+                    "value": "{{cartRid}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "orders"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"addressId\": \"{{addressRid}}\",\n  \"paymentMethodId\": \"card\",\n  \"cartItemIds\": [\n    \"{{cartItemRid}}\"\n  ]\n}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201 || pm.response.code === 200) {",
+                      "  const j = pm.response.json();",
+                      "  if (j.orderId) pm.collectionVariables.set('orderRid', j.orderId);",
+                      "  if (j.rid) pm.collectionVariables.set('orderRid', j.rid);",
+                      "  if (j.orders && j.orders[0]) pm.collectionVariables.set('orderRid', j.orders[0].rid || j.orders[0].id);",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Order detail",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/{{orderRid}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "orders",
+                    "{{orderRid}}"
+                  ]
+                },
+                "description": "",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "05 Account management",
+          "description": "profile \u2192 address \u2192 payment method \u2192 wishlist \u2192 review",
+          "item": [
+            {
+              "name": "Login",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"demo@handco.test\",\n  \"password\": \"password\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "  const j = pm.response.json();",
+                      "  const access = j.accessToken || (j.data && j.data.accessToken);",
+                      "  const refresh = j.refreshToken || (j.data && j.data.refreshToken);",
+                      "  const user = j.user || (j.data && j.data.user);",
+                      "  // Environment vars shadow collection vars in Postman resolution order.",
+                      "  // Write both so Auth tab {{accessToken}} resolves after Login.",
+                      "  if (access) {",
+                      "    pm.collectionVariables.set('accessToken', access);",
+                      "    pm.environment.set('accessToken', access);",
+                      "  }",
+                      "  if (refresh) {",
+                      "    pm.collectionVariables.set('refreshToken', refresh);",
+                      "    pm.environment.set('refreshToken', refresh);",
+                      "  }",
+                      "  if (user && user.rid) {",
+                      "    pm.collectionVariables.set('userRid', user.rid);",
+                      "    pm.environment.set('userRid', user.rid);",
+                      "  }",
+                      "  pm.test('captured accessToken', () => pm.expect(Boolean(access)).to.eql(true));",
+                      "} else {",
+                      "  console.warn('Auth response did not return tokens', pm.response.code, pm.response.text());",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update profile",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/users/me/profile",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "me",
+                    "profile"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"Demo Customer\",\n  \"displayName\": \"Demo\"\n}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Create address",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/addresses",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "addresses"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"country\": \"AE\",\n  \"firstName\": \"Demo\",\n  \"lastName\": \"Customer\",\n  \"phoneCountryCode\": \"+971\",\n  \"phoneNumber\": \"501234567\",\n  \"addressLine\": \"Hse 8 M Street\",\n  \"region\": \"Dubai\",\n  \"city\": \"Dubai\",\n  \"isDefault\": true\n}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201 || pm.response.code === 200) {",
+                      "  const j = pm.response.json();",
+                      "  const rid = j.rid || (j.items && j.items[0] && j.items[0].rid);",
+                      "  if (rid) pm.collectionVariables.set('addressRid', rid);",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Set default",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/addresses/{{addressRid}}/default",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "addresses",
+                    "{{addressRid}}",
+                    "default"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Add",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payment-methods",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "payment-methods"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"visa\",\n  \"cardholderName\": \"Demo Customer\",\n  \"maskedDetail\": \"****4242\",\n  \"network\": \"visa\",\n  \"token\": \"tok_test\",\n  \"isDefault\": true\n}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if(pm.response.code===201||pm.response.code===200){const j=pm.response.json(); const r=j.rid||j.id; if(r) pm.collectionVariables.set('paymentMethodRid', r);}",
+                      "pm.test('ok',()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "List products",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/products?page=1&limit=20&categoryId=electronics",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "products"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "key": "categoryId",
+                      "value": "electronics"
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "  const j = pm.response.json();",
+                      "  const items = j.items || [];",
+                      "  if (items[0] && items[0].rid) pm.collectionVariables.set('productRid', items[0].rid);",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.eql(200));",
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Add to wishlist",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/wishlist/{{productRid}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "wishlist",
+                    "{{productRid}}"
+                  ]
+                },
+                "description": "",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "List wishlist",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/wishlist?category=&minRating=",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "wishlist"
+                  ],
+                  "query": [
+                    {
+                      "key": "category",
+                      "value": ""
+                    },
+                    {
+                      "key": "minRating",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Remove from wishlist",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/wishlist/{{productRid}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "wishlist",
+                    "{{productRid}}"
+                  ]
+                },
+                "description": "",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Waiting",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reviews/waiting",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reviews",
+                    "waiting"
+                  ]
+                },
+                "description": "",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if(pm.response.code===200){const j=pm.response.json(); const items=j.items||j.reviews||[]; if(items[0]) pm.collectionVariables.set('reviewRid', items[0].rid||items[0].id);}",
+                      "pm.test('ok',()=>pm.expect(pm.response.code).to.eql(200));",
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Submit review",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reviews",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reviews"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reviewId\": \"{{reviewRid}}\",\n  \"rating\": 5,\n  \"title\": \"Great\",\n  \"detailedReview\": \"Would buy again.\"\n}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "06 Order aftercare",
+          "description": "list orders \u2192 tracking \u2192 buy-again \u2192 return",
+          "item": [
+            {
+              "name": "Login",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"demo@handco.test\",\n  \"password\": \"password\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "  const j = pm.response.json();",
+                      "  const access = j.accessToken || (j.data && j.data.accessToken);",
+                      "  const refresh = j.refreshToken || (j.data && j.data.refreshToken);",
+                      "  const user = j.user || (j.data && j.data.user);",
+                      "  // Environment vars shadow collection vars in Postman resolution order.",
+                      "  // Write both so Auth tab {{accessToken}} resolves after Login.",
+                      "  if (access) {",
+                      "    pm.collectionVariables.set('accessToken', access);",
+                      "    pm.environment.set('accessToken', access);",
+                      "  }",
+                      "  if (refresh) {",
+                      "    pm.collectionVariables.set('refreshToken', refresh);",
+                      "    pm.environment.set('refreshToken', refresh);",
+                      "  }",
+                      "  if (user && user.rid) {",
+                      "    pm.collectionVariables.set('userRid', user.rid);",
+                      "    pm.environment.set('userRid', user.rid);",
+                      "  }",
+                      "  pm.test('captured accessToken', () => pm.expect(Boolean(access)).to.eql(true));",
+                      "} else {",
+                      "  console.warn('Auth response did not return tokens', pm.response.code, pm.response.text());",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "List orders",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders?status=all&page=1&limit=20",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "orders"
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "all"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201 || pm.response.code === 200) {",
+                      "  const j = pm.response.json();",
+                      "  if (j.orderId) pm.collectionVariables.set('orderRid', j.orderId);",
+                      "  if (j.rid) pm.collectionVariables.set('orderRid', j.rid);",
+                      "  if (j.orders && j.orders[0]) pm.collectionVariables.set('orderRid', j.orders[0].rid || j.orders[0].id);",
+                      "}",
+                      "pm.test('status ok', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Tracking",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/{{orderRid}}/tracking",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "orders",
+                    "{{orderRid}}",
+                    "tracking"
+                  ]
+                },
+                "description": "",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Buy again from order",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Cart-Id",
+                    "value": "{{cartRid}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/{{orderRid}}/buy-again",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "orders",
+                    "{{orderRid}}",
+                    "buy-again"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Return request",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/{{orderRid}}/return",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "orders",
+                    "{{orderRid}}",
+                    "return"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Changed mind\"\n}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP success', function () {",
+                      "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

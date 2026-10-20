@@ -1,0 +1,30 @@
+---
+description: Admin Ziggy http links on https pages (domain routes + TLS proxy)
+---
+
+# Admin Ziggy scheme follows APP_URL (marketing only)
+
+**Goal:** Keep admin sidenav / `route()` links on `https://` when the browser is on HTTPS, without breaking tenant subdomain login.
+
+## Why it happens
+1. Marketing + admin routes are `Route::domain(...)` scoped.
+2. Ziggy then emits **absolute** URLs and takes the scheme/host from `Ziggy.url`.
+3. Default Ziggy base URL is `url('/')`, which uses the **incoming request** scheme.
+4. TLS often terminates at Apache/nginx, so PHP sees `http` unless `TRUSTED_PROXIES` is set.
+5. Result on marketing/admin: page is `https://…` but sidenav hrefs are `http://…`.
+6. If Ziggy is always pinned to `APP_URL`, tenant pages (e.g. `boom2.…/login`) post `route('login')` to the marketing host and hit CORS.
+
+## Fix in code
+`AdminZiggy::toArray()`:
+- **Marketing host:** base URL = `config('app.url')` (https scheme/host).
+- **Tenant host:** base URL = request host with scheme from `APP_URL` (keeps subdomain + https).
+
+## Ops (required behind host Apache → :8021)
+Set `TRUSTED_PROXIES=*` in `docker/env/app.env` (and host `.env`). Without it Laravel sees a private Docker IP, so Ziggy/https links and IP geo (pricing currency) both fall back wrong. Recreate the app container after changing it.
+
+## Regression
+`php artisan test --filter=AdminDashboardShellTest`
+
+## What didn't work
+- Treating this as an AdminLayout bug; `route()` was absolute because of domain-scoped routes, not relative paths.
+- Pinning every request (including tenants) to `APP_URL`; that fixed admin https but made workspace login POST to the marketing domain.

@@ -1,0 +1,22 @@
+---
+description: Payment webhooks must not assume customer or cart session context
+---
+
+# Payment webhooks have no session context
+
+**Goal:** Settle payments reliably from provider webhooks.
+
+## Steps
+
+1. Webhook routes live outside Sanctum/customer auth.
+2. Resolve payment/order by payment rid or provider reference in the payload/metadata.
+3. Verify with the provider API (`verifyCharge`) before marking paid.
+4. Persist webhook events idempotently by `(provider, external_event_id)`.
+
+## Gotchas
+
+- Do not read `X-Cart-Id`, bearer tokens, or staff session from webhook requests.
+
+## What didn't work
+
+- Applying webhook state through cart/session middleware silently drops or mis-attributes settlements.
