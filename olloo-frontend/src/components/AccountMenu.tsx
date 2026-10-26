@@ -40,7 +40,7 @@ const accountMenuItems: AccountMenuItem[] = [
 ]
 
 const menuItemButton =
-  'group flex w-full cursor-pointer items-center gap-2 rounded-lg p-2 text-left transition-colors hover:bg-orange-light active:bg-bg-secondary'
+  'group flex w-full cursor-pointer items-center gap-2 rounded-lg p-2 text-left transition-colors hover:bg-brand-light active:bg-bg-secondary'
 
 function AccountMenuItemButton({
   item,
@@ -54,10 +54,10 @@ function AccountMenuItemButton({
   return (
     <button type="button" onClick={onClick} className={menuItemButton}>
       <Icon
-        className="size-6 shrink-0 text-text-secondary transition-colors group-hover:text-primary-orange"
+        className="size-6 shrink-0 text-text-secondary transition-colors group-hover:text-brand"
         aria-hidden
       />
-      <span className="flex-1 text-sm font-medium leading-4 tracking-[-0.28px] text-text-primary transition-colors group-hover:text-primary-orange">
+      <span className="flex-1 text-sm font-medium leading-4 tracking-[-0.28px] text-text-primary transition-colors group-hover:text-brand">
         {item.label}
       </span>
     </button>
@@ -164,10 +164,10 @@ export function AccountMenu({
         className={menuItemButton}
       >
         <LogoutBoxRLineIcon
-          className="size-6 shrink-0 text-text-secondary transition-colors group-hover:text-primary-orange"
+          className="size-6 shrink-0 text-text-secondary transition-colors group-hover:text-brand"
           aria-hidden
         />
-        <span className="flex-1 text-sm font-medium leading-4 tracking-[-0.28px] text-text-primary transition-colors group-hover:text-primary-orange">
+        <span className="flex-1 text-sm font-medium leading-4 tracking-[-0.28px] text-text-primary transition-colors group-hover:text-brand">
           Sign Out
         </span>
       </button>

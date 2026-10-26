@@ -138,7 +138,7 @@ export default function Index({ payments, filters, statuses, providers, ranges, 
                     </label>
                     <button
                         type="submit"
-                        className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                        className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
                     >
                         Search
                     </button>
@@ -184,7 +184,7 @@ export default function Index({ payments, filters, statuses, providers, ranges, 
                             onClick={() => visit({ range: value })}
                             className={`cursor-pointer rounded-full px-3 py-1 text-sm ${
                                 filters.range === value
-                                    ? 'bg-slate-900 text-white'
+                                    ? 'bg-brand text-white'
                                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                             }`}
                         >

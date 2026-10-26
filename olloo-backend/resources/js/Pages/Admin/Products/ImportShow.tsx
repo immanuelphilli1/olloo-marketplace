@@ -172,14 +172,14 @@ export default function ImportShow({ import: importRun, canCreate, workerRunning
                     {importRun.kind === 'csv' ? (
                         <Link
                             href={route('admin.products.import.csv')}
-                            className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                            className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
                         >
                             Import another file
                         </Link>
                     ) : (
                         <Link
                             href={route('admin.products.import.images')}
-                            className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                            className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
                         >
                             Upload more photos
                         </Link>

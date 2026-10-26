@@ -35,9 +35,9 @@ export function PromoBannerSection({ onShopAllCategories: _onShopAllCategories }
   const activeSlide = promoSlides[currentSlide]
 
   return (
-    <section className="border-b border-border-primary p-4 lg:px-16 lg:py-6">
+    <section className="px-4 lg:px-16">
       <div
-        className="relative h-40 overflow-hidden rounded-[12px] lg:h-80"
+        className="relative h-40 overflow-hidden rounded-card bg-bg-secondary lg:h-80"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
@@ -46,7 +46,7 @@ export function PromoBannerSection({ onShopAllCategories: _onShopAllCategories }
             <img
               alt={slide.altText}
               aria-hidden={index !== currentSlide}
-              className={`absolute inset-0 size-full rounded-[12px] object-cover transition-opacity duration-500 ${
+              className={`absolute inset-0 size-full object-cover transition-opacity duration-500 ${
                 index === currentSlide ? 'opacity-100' : 'opacity-0'
               }`}
               src={slide.imageUrl}
@@ -76,7 +76,7 @@ export function PromoBannerSection({ onShopAllCategories: _onShopAllCategories }
           >
             <div className="flex flex-col justify-center gap-4">
               {activeSlide.title ? (
-                <h2 className="max-w-50 text-xl font-medium leading-8 tracking-[-0.48px] text-text-inverse lg:max-w-xl lg:text-[32px] lg:leading-10 lg:tracking-[-0.64px]">
+                <h2 className="font-display max-w-50 text-xl font-bold leading-tight tracking-[-0.02em] text-text-inverse lg:max-w-xl lg:text-[40px]">
                   {activeSlide.title}
                 </h2>
               ) : null}
@@ -88,7 +88,7 @@ export function PromoBannerSection({ onShopAllCategories: _onShopAllCategories }
               {activeSlide.buttonText && activeSlide.linkUrl ? (
                 <BannerLink
                   linkUrl={activeSlide.linkUrl}
-                  className="pointer-events-auto inline-flex w-fit rounded-full bg-primary-orange px-4 py-2 text-sm font-medium text-text-inverse"
+                  className="pointer-events-auto inline-flex w-fit rounded-full bg-accent px-5 py-2.5 text-sm font-bold text-accent-ink"
                 >
                   {activeSlide.buttonText}
                 </BannerLink>

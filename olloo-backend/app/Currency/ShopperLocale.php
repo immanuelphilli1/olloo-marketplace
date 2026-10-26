@@ -21,7 +21,8 @@ use Illuminate\Support\Facades\Log;
  * 3. The `assigned_country` we placed them in, detected from their IP the first
  *    time we saw them or set by staff.
  * 4. The current visitor IP.
- * 5. The default currency's own country (`currencies.country_code`).
+ * 5. `currency.fallback_country` when set, else the default currency's own
+ *    country (`currencies.country_code`).
  *
  * A signed-in shopper's stored choice beats their current IP, so their currency
  * does not change because they travelled or their connection moved. A guest has
@@ -205,7 +206,12 @@ final class ShopperLocale
     }
 
     /**
-     * Where an unplaceable shopper is put: the default currency's own country.
+     * Where an unplaceable shopper is put: the configured fallback market, else
+     * the default currency's own country.
+     *
+     * The fallback is an explicit market choice (olloo is Ghana-first), not a
+     * guess from the currency. One naming a country we do not hold is a
+     * deployment gap: it logs and falls through rather than failing the page.
      *
      * `currencies.country_code` is explicit, one country per currency, so USD
      * lands in the US rather than in whichever country happens to sort first
@@ -219,6 +225,18 @@ final class ShopperLocale
      */
     private function defaultCountry(): ?Country
     {
+        $fallback = config('currency.fallback_country');
+        if (is_string($fallback) && $fallback !== '') {
+            $configured = Country::query()->where('code', strtoupper($fallback))->first();
+            if ($configured instanceof Country) {
+                return $configured;
+            }
+
+            Log::warning('SHOPPER_FALLBACK_COUNTRY names a country that is not in the countries table, so the default currency\'s country is used instead.', [
+                'fallback_country' => $fallback,
+            ]);
+        }
+
         $country = Currency::default()->country;
 
         if ($country instanceof Country) {

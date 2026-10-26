@@ -42,6 +42,14 @@ export type CheckEmailResponse = {
   oauthProvider?: 'google'
 }
 
+/** `POST /auth/check-phone`: whether a Ghana number already has an account. */
+export type CheckPhoneResponse = {
+  exists: boolean
+  nextStep: 'password' | 'register'
+  /** The number as the API normalised it, e.g. `+233241234567`. */
+  phone: string
+}
+
 /** Response of `GET /auth/oauth/google/url`. */
 export type GoogleOAuthUrlResponse = {
   url: string
@@ -93,6 +101,8 @@ export type ApiProductCard = Product & {
   taxRatePercent?: number | null
   reviewCount?: number
   soldCount?: number
+  /** Merchandising labels, e.g. `["Best seller"]`. Replaces the `tag` string. */
+  tags?: string[]
   /** False when the default variant cannot currently be bought. */
   inStock?: boolean
   /**
@@ -216,6 +226,8 @@ export type ApiProductDetailResponse = {
   priceMoney: Money
   shippingFeeMoney?: Money | null
   deliveryDays?: ApiDeliveryDays | null
+  /** Other sizes of this model, uploaded as separate products; null when it stands alone. */
+  family?: ApiProductFamily | null
   modelOptions: string[]
   variants?: ApiProductVariant[]
   /** Replaces `modelOptions` when present; same shape as `variants`. */
@@ -223,7 +235,25 @@ export type ApiProductDetailResponse = {
   descriptionLines?: string[]
 }
 
+/** Separately uploaded products sharing an admin "Size options" family key. */
+export type ApiProductFamily = {
+  /** What shoppers choose, e.g. `Size` or `Capacity`. */
+  optionName: string
+  options: Array<{
+    rid: string
+    /** The option label, e.g. `43 inch`. */
+    value: string
+    priceMoney: Money
+    originalPriceMoney?: Money | null
+    inStock: boolean
+    imageUrl?: string | null
+    isCurrent: boolean
+  }>
+}
+
 export type ApiProductReview = {
+  rid?: string
+  title?: string | null
   author: string
   location: string
   /** ISO timestamp. Replaces the `date` display string. */
@@ -234,6 +264,15 @@ export type ApiProductReview = {
   text: string
   /** Reviewed price. Replaces `priceAmount`. */
   priceMoney?: Money
+}
+
+/** `GET /products/:rid/reviews`. */
+export type ApiProductReviewsResponse = {
+  reviews: ApiProductReview[]
+  total: number
+  avgRating?: number
+  /** The caller's own review in any status; null for guests and non-reviewers. */
+  myReview?: (ApiProductReview & { status: 'pending' | 'published' }) | null
 }
 
 export type ApiCartItem = CartItem & {
@@ -655,7 +694,10 @@ export type PreferredCountryResponse = {
 export type ApiAddress = {
   id?: Rid
   rid?: Rid
+  /** Country name for display, e.g. `Ghana`. */
   country?: string
+  /** ISO 3166-1 alpha-2 code, e.g. `GH`; what catalog reads need as `?country=`. */
+  countryCode?: string | null
   firstName?: string
   lastName?: string
   phoneCountryCode?: string

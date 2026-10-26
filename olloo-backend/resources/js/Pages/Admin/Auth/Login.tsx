@@ -27,10 +27,10 @@ export default function Login() {
                 className="w-full max-w-md space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
             >
                 <div className="flex flex-col items-center text-center">
-                    <img src="/images/brand/hcomall-logo.svg" alt="H&CO." className="mb-3 h-14 w-14" />
+                    <img src="/images/brand/olloo-mark.svg" alt="olloo" className="mb-3 h-14 w-14" />
                     <h1 className="text-xl font-semibold">Staff login</h1>
                     <p className="mt-1 text-sm text-slate-500">
-                        Sign in to the H&amp;CO. admin panel.
+                        Sign in to the olloo admin panel.
                     </p>
                 </div>
 
@@ -77,7 +77,7 @@ export default function Login() {
                 <button
                     type="submit"
                     disabled={processing}
-                    className="cursor-pointer w-full rounded-md bg-slate-900 px-4 py-2 text-white hover:bg-slate-800 disabled:opacity-60"
+                    className="cursor-pointer w-full rounded-md bg-brand px-4 py-2 text-white hover:bg-brand-dark disabled:opacity-60"
                 >
                     {processing ? 'Signing in…' : 'Sign in'}
                 </button>

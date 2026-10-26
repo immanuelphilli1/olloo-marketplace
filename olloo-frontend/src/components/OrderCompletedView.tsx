@@ -112,7 +112,7 @@ export function OrderCompletedView({ onGoHome }: OrderCompletedViewProps) {
             {shippingAddress ? (
               <div className="rounded-xl bg-bg-secondary p-4">
                 <p className="text-base font-medium leading-5 tracking-[-0.32px] text-text-primary">
-                  Order will be shipped to:
+                  Order will be delivered to:
                 </p>
                 {shippingAddress.contact ? (
                   <p className="mt-2 text-sm font-medium leading-4.5 tracking-[-0.28px] text-text-primary">
@@ -129,7 +129,7 @@ export function OrderCompletedView({ onGoHome }: OrderCompletedViewProps) {
             ) : (
               <div className="rounded-xl bg-bg-secondary p-4">
                 <p className="text-base font-medium leading-5 tracking-[-0.32px] text-text-primary">
-                  Shipping address
+                  Delivery address
                 </p>
                 <p className="mt-2 text-sm leading-4.5 tracking-[-0.28px] text-text-secondary">
                   {didFailLoadingOrder

@@ -161,7 +161,7 @@ final class EmailLogRecorder
         }
 
         // Relative brand path without leading domain (common in local previews).
-        $relative = '/'.ltrim((string) config('brand.logo.path', 'images/brand/handco-logo.png'), '/');
+        $relative = '/'.ltrim((string) config('brand.logo.path', 'images/brand/olloo-logo.png'), '/');
         if (str_contains($rewritten, $relative) && ! str_contains($rewritten, $trackingUrl)) {
             $rewritten = str_replace($relative, $trackingUrl, $rewritten);
         }

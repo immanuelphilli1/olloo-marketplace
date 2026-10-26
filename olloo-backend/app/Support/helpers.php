@@ -81,7 +81,7 @@ if (! function_exists('email_logo_url')) {
             return route('mail.brand-asset', ['rid' => $emailLogRid]);
         }
 
-        $path = (string) config('brand.logo.path', 'images/brand/handco-logo.png');
+        $path = (string) config('brand.logo.path', 'images/brand/olloo-logo.png');
 
         return asset($path);
     }
@@ -95,7 +95,7 @@ if (! function_exists('email_brand_logo_candidates')) {
      */
     function email_brand_logo_candidates(): array
     {
-        $path = ltrim((string) config('brand.logo.path', 'images/brand/handco-logo.png'), '/');
+        $path = ltrim((string) config('brand.logo.path', 'images/brand/olloo-logo.png'), '/');
 
         return array_values(array_unique(array_filter([
             asset($path),

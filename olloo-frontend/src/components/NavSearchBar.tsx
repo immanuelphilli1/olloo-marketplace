@@ -22,6 +22,7 @@ type NavSearchBarProps = {
   startExpanded?: boolean
   /** Mobile only: tints the collapsed search icon, e.g. white over a hero image. */
   collapsedIconClassName?: string
+  placeholder?: string
 }
 
 export function NavSearchBar({
@@ -32,6 +33,7 @@ export function NavSearchBar({
   onSearchSubmit,
   startExpanded = false,
   collapsedIconClassName = 'text-text-secondary',
+  placeholder,
 }: NavSearchBarProps) {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
@@ -216,7 +218,7 @@ export function NavSearchBar({
           event.preventDefault()
           submitSearch(query)
         }}
-        className={`flex items-center gap-2 rounded-full border border-border-secondary bg-bg-primary p-1 transition-all duration-300 ease-out ${
+        className={`flex items-center gap-2 rounded-full border-2 border-brand bg-bg-primary p-1 transition-all duration-300 ease-out focus-within:shadow-[0_0_0_4px_var(--color-brand-light)] ${
           isMobile
             ? isExpanded
               ? 'w-full scale-100 opacity-100'
@@ -232,10 +234,10 @@ export function NavSearchBar({
             value={query}
             onChange={(event) => handleQueryChange(event.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={variant === 'desktop' ? 'Search product' : 'Search'}
+            placeholder={placeholder ?? (variant === 'desktop' ? 'Search olloo' : 'Search')}
             aria-label="Search product"
             autoComplete="off"
-            className={`min-w-0 flex-1 bg-transparent text-base font-medium tracking-[-0.32px] text-text-primary outline-none placeholder:text-text-tertiary ${inputClassName}`}
+            className={`min-w-0 flex-1 bg-transparent text-base font-medium text-text-primary outline-none placeholder:font-normal placeholder:text-text-tertiary [&::-webkit-search-cancel-button]:hidden ${inputClassName}`}
           />
           {query ? (
             <button
@@ -300,7 +302,7 @@ export function NavSearchBar({
                 <button
                   type="button"
                   onClick={() => submitSearch(query)}
-                  className="w-full cursor-pointer px-3 py-3 text-left text-sm font-medium tracking-[-0.28px] text-primary-orange"
+                  className="w-full cursor-pointer px-3 py-3 text-left text-sm font-medium tracking-[-0.28px] text-brand"
                 >
                   See all results for &ldquo;{query.trim()}&rdquo;
                 </button>

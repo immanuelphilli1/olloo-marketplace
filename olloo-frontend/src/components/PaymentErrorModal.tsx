@@ -99,7 +99,7 @@ export function PaymentErrorModal({
 
         <div className="flex flex-col gap-4 px-6 py-6">
           <div className="flex items-start gap-3">
-            <AlertFillIcon className="mt-0.5 size-6 shrink-0 text-primary-orange" aria-hidden />
+            <AlertFillIcon className="mt-0.5 size-6 shrink-0 text-brand" aria-hidden />
             <p
               id={`${titleId}-detail`}
               className="min-w-0 flex-1 text-base font-medium leading-5 tracking-[-0.32px] text-text-primary"
@@ -122,7 +122,7 @@ export function PaymentErrorModal({
               <button
                 type="button"
                 onClick={onViewOrders}
-                className="btn-orange flex h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
+                className="btn-brand flex h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
               >
                 Pay for this order
               </button>
@@ -131,14 +131,14 @@ export function PaymentErrorModal({
               <button
                 type="button"
                 onClick={onRetry}
-                className="btn-orange flex h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
+                className="btn-brand flex h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
               >
                 Try again
               </button>
             ) : null}
             <button
               type="button"
-              onClick={onClose}
+              onClick={isOrderPlaced ? onViewOrders : onClose}
               className="w-full cursor-pointer rounded-full px-4 py-2 text-base font-medium leading-5 tracking-[-0.32px] text-text-secondary"
             >
               {/* When an order exists both actions lead to the same place — the

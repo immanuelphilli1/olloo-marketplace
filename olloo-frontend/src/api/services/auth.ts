@@ -1,8 +1,9 @@
 import { apiRequest, persistAuthResponse } from '../client'
-import type { AuthUser } from '../../data/auth'
+import type { AuthUser, SignInCredentials } from '../../data/auth'
 import type {
   AuthResponse,
   CheckEmailResponse,
+  CheckPhoneResponse,
   GoogleOAuthUrlResponse,
 } from '../types'
 
@@ -23,16 +24,30 @@ export async function checkEmail(email: string): Promise<CheckEmailResponse> {
   })
 }
 
-export async function login(email: string, password: string): Promise<AuthResponse> {
+/** Phone-first sign-in: the API normalises the number and says what comes next. */
+export async function checkPhone(phone: string): Promise<CheckPhoneResponse> {
+  return apiRequest<CheckPhoneResponse>('/auth/check-phone', {
+    method: 'POST',
+    body: { phone },
+    auth: false,
+    cart: false,
+  })
+}
+
+export async function login(
+  credentials: SignInCredentials,
+  password: string,
+): Promise<AuthResponse> {
   const response = await apiRequest<AuthResponse>('/auth/login', {
     method: 'POST',
-    body: { email, password },
+    body: { ...credentials, password },
     auth: false,
   })
   return persistAuthResponse(response)
 }
 
 export async function register(input: {
+  phone: string
   email: string
   password: string
   fullName: string
@@ -41,6 +56,7 @@ export async function register(input: {
   const response = await apiRequest<AuthResponse>('/auth/register', {
     method: 'POST',
     body: {
+      phone: input.phone,
       email: input.email,
       password: input.password,
       password_confirmation: input.password,

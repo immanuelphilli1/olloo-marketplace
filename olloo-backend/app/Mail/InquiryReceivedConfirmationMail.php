@@ -21,7 +21,7 @@ final class InquiryReceivedConfirmationMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'We received your HandCO inquiry',
+            subject: 'We received your olloo inquiry',
         );
     }
 

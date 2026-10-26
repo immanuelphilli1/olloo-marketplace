@@ -27,7 +27,7 @@ function NotificationToggle({
       aria-label={label}
       onClick={onChange}
       className={`relative h-8 w-12 shrink-0 cursor-pointer rounded-full transition-colors ${
-        enabled ? 'bg-text-primary' : 'bg-border-secondary'
+        enabled ? 'bg-brand' : 'bg-border-secondary'
       }`}
     >
       <span

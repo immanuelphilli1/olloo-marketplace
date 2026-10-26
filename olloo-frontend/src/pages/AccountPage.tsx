@@ -66,13 +66,11 @@ export function AccountPage() {
   }, [navigate, section, sectionParam])
 
   const {
-    activeCategoryId,
     categoriesTargetId,
     closeCategories,
     handleSubcategorySelect,
     isCategoriesOpen,
     toggleCategories,
-    toggleCategoriesFromLinkBar,
   } = useCategoryNavigation()
 
   const handleOpenCart = useCallback(() => {
@@ -112,8 +110,6 @@ export function AccountPage() {
         onCloseCategories={closeCategories}
         onSubcategorySelect={handleSubcategorySelect}
         showCategoryLinksBar
-        onOpenCategories={toggleCategoriesFromLinkBar}
-        activeCategoryId={activeCategoryId}
         onOpenCart={handleOpenCart}
         onOpenWishlist={handleOpenWishlist}
         onAfterSignOut={handleGoHome}
@@ -133,7 +129,7 @@ export function AccountPage() {
             onDismissResidenceAddIntent={handleDismissResidenceAddIntent}
           />
         </main>
-        <Footer onOpenCategories={toggleCategoriesFromLinkBar} />
+        <Footer />
       </div>
       <BackToTopButton />
     </>

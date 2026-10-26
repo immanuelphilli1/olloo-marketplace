@@ -28,7 +28,7 @@ function HistorySelectToggle({
       type="button"
       onClick={onToggle}
       className={`flex shrink-0 cursor-pointer items-center justify-center rounded-full border-2 ${className} ${
-        selected ? 'border-primary-orange bg-primary-orange' : 'border-border-secondary bg-bg-primary'
+        selected ? 'border-brand bg-brand' : 'border-border-secondary bg-bg-primary'
       }`}
       aria-label={label}
       aria-pressed={selected}
@@ -69,7 +69,7 @@ function BrowsingHistoryManageBar({
             type="button"
             onClick={onDelete}
             disabled={selectedCount === 0}
-            className="btn-orange flex cursor-pointer items-center justify-center rounded-full px-4 py-2 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-brand flex cursor-pointer items-center justify-center rounded-full px-4 py-2 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-50"
           >
             Delete({selectedCount})
           </button>
@@ -100,7 +100,7 @@ function BrowsingHistoryManageBar({
             type="button"
             onClick={onDelete}
             disabled={selectedCount === 0}
-            className="btn-orange flex cursor-pointer items-center justify-center rounded-full px-4 py-2 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-brand flex cursor-pointer items-center justify-center rounded-full px-4 py-2 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-50"
           >
             Delete({selectedCount})
           </button>
@@ -168,7 +168,7 @@ function BrowsingHistorySectionBlock({
           >
             Manage
             <ArrowRightSLineIcon
-              className="size-6 text-text-secondary transition-colors group-hover:text-primary-orange"
+              className="size-6 text-text-secondary transition-colors group-hover:text-brand"
               aria-hidden
             />
           </button>
@@ -181,7 +181,7 @@ function BrowsingHistorySectionBlock({
           >
             Manage
             <ArrowRightSLineIcon
-              className="size-6 text-text-secondary transition-colors group-hover:text-primary-orange"
+              className="size-6 text-text-secondary transition-colors group-hover:text-brand"
               aria-hidden
             />
           </button>
@@ -235,7 +235,7 @@ function ClearAllConfirm({
           type="button"
           onClick={onConfirm}
           disabled={isClearing}
-          className="btn-orange flex h-11 cursor-pointer items-center justify-center rounded-full px-5 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn-brand flex h-11 cursor-pointer items-center justify-center rounded-full px-5 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isClearing ? 'Clearing…' : 'Yes, clear all'}
         </button>
@@ -404,7 +404,7 @@ export function BrowsingHistoryPanel() {
           <button
             type="button"
             onClick={() => setShowClearAll(true)}
-            className="cursor-pointer text-sm font-medium leading-4.5 tracking-[-0.28px] text-text-secondary underline underline-offset-4 hover:text-primary-orange"
+            className="cursor-pointer text-sm font-medium leading-4.5 tracking-[-0.28px] text-text-secondary underline underline-offset-4 hover:text-brand"
           >
             Clear all history
           </button>
@@ -414,7 +414,7 @@ export function BrowsingHistoryPanel() {
       {errorMessage ? (
         <p
           role="alert"
-          className="mb-4 rounded-xl bg-orange-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-primary-orange"
+          className="mb-4 rounded-xl bg-brand-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-brand"
         >
           {errorMessage}
         </p>

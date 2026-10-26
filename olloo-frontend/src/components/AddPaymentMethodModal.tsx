@@ -367,7 +367,7 @@ export function AddPaymentMethodModal({
               <button
                 type="button"
                 onClick={handleSubmit}
-                className="btn-orange flex h-13 flex-1 cursor-pointer items-center justify-center rounded-full px-6 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
+                className="btn-brand flex h-13 flex-1 cursor-pointer items-center justify-center rounded-full px-6 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
               >
                 {submitLabel}
               </button>

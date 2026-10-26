@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { catalogApi } from '../api'
 import { getAccountPath } from '../data/accountRoutes'
@@ -8,13 +8,16 @@ import ArrowLeftSLineIcon from 'remixicon-react/ArrowLeftSLineIcon'
 import ArrowRightSLineIcon from 'remixicon-react/ArrowRightSLineIcon'
 import HeartFillIcon from 'remixicon-react/HeartFillIcon'
 import HeartLineIcon from 'remixicon-react/HeartLineIcon'
+import MapPin2LineIcon from 'remixicon-react/MapPin2LineIcon'
 import PriceTag3LineIcon from 'remixicon-react/PriceTag3LineIcon'
 import Refund2LineIcon from 'remixicon-react/Refund2LineIcon'
 import ShareForwardBoxFillIcon from 'remixicon-react/ShareForwardBoxFillIcon'
 import ShieldCheckLineIcon from 'remixicon-react/ShieldCheckLineIcon'
 import ShieldUserFillIcon from 'remixicon-react/ShieldUserFillIcon'
 import SubtractLineIcon from 'remixicon-react/SubtractLineIcon'
+import TruckLineIcon from 'remixicon-react/TruckLineIcon'
 import User6LineIcon from 'remixicon-react/User6LineIcon'
+import { useAuth } from '../context/AuthContext'
 import { useCatalog } from '../context/CatalogContext'
 import { useShop } from '../context/ShopContext'
 import { useProductDestination } from '../hooks/useProductDestination'
@@ -22,17 +25,24 @@ import { useShareLink } from '../hooks/useShareLink'
 import type {
   ProductDetail,
   ProductDetailContext,
+  ProductFamily,
   ProductOptionGroup,
   ProductReview,
 } from '../data/productDetail'
 import { useProductDetailSelection } from '../hooks/useProductDetailSelection'
 import type { Product } from '../data/products'
 import { getProductPathForListingSelection } from '../data/shopRoutes'
+import { formatAmount, splitDisplayPrice } from '../data/format'
+import type { DefaultAddress } from '../data/profile'
 import { ProductCard } from './ProductCard'
 import { RatingStars } from './RatingStars'
 
+const REVIEWS_PAGE_SIZE = 10
+
 type ProductDetailViewProps = {
   context: ProductDetailContext
+  /** The signed-in shopper's default address; null for guests or when none is saved. */
+  deliveryAddress: DefaultAddress | null
   onGoHome: () => void
   onBackToListing: () => void
   onGoToCart: () => void
@@ -119,8 +129,8 @@ function ProductImageGallery({
             key={`${image}-${index}`}
             type="button"
             onClick={() => setActiveIndex(index)}
-            className={`relative size-18 shrink-0 cursor-pointer overflow-hidden rounded-lg border bg-bg-secondary ${
-              index === activeIndex ? 'border-text-primary' : 'border-border-primary'
+            className={`relative size-18 shrink-0 cursor-pointer overflow-hidden rounded-xl border-2 bg-bg-secondary transition-colors ${
+              index === activeIndex ? 'border-brand' : 'border-transparent hover:border-border-secondary'
             }`}
             aria-label={`View image ${index + 1}`}
             aria-current={index === activeIndex}
@@ -131,7 +141,7 @@ function ProductImageGallery({
       </div>
 
       <div className="flex w-full flex-col gap-4 lg:flex-1">
-        <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-border-primary bg-bg-secondary lg:max-w-110">
+        <div className="relative aspect-square w-full overflow-hidden rounded-card bg-bg-secondary lg:max-w-110">
           <img
             alt={productName}
             className="absolute inset-0 size-full object-contain"
@@ -163,8 +173,8 @@ function ProductImageGallery({
               key={`mobile-${image}-${index}`}
               type="button"
               onClick={() => setActiveIndex(index)}
-              className={`relative size-18 shrink-0 cursor-pointer overflow-hidden rounded-lg border bg-bg-secondary ${
-                index === activeIndex ? 'border-text-primary' : 'border-border-primary'
+              className={`relative size-18 shrink-0 cursor-pointer overflow-hidden rounded-xl border-2 bg-bg-secondary transition-colors ${
+                index === activeIndex ? 'border-brand' : 'border-transparent'
               }`}
               aria-label={`View image ${index + 1}`}
               aria-current={index === activeIndex}
@@ -178,76 +188,106 @@ function ProductImageGallery({
   )
 }
 
+function ReviewCard({ review, isOwn = false }: { review: ProductReview; isOwn?: boolean }) {
+  return (
+    <div
+      className={`flex flex-col gap-2 ${
+        isOwn ? 'rounded-xl border border-brand-lighter bg-brand-light/60 p-3' : ''
+      }`}
+    >
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="flex size-6 items-center justify-center rounded-full bg-bg-tertiary">
+          <User6LineIcon className="size-4 text-text-secondary" aria-hidden />
+        </span>
+        <span className="font-semibold text-text-primary">{isOwn ? 'Your review' : review.author}</span>
+        {review.location ? <span className="text-text-secondary">in {review.location}</span> : null}
+        {review.date ? <span className="text-text-tertiary">· {review.date}</span> : null}
+        {isOwn && review.status === 'pending' ? (
+          <span className="rounded-full bg-accent-light px-2 py-0.5 text-xs font-semibold text-accent-ink">
+            Awaiting approval
+          </span>
+        ) : null}
+      </div>
+      <RatingStars value={review.rating} size="sm" />
+      {review.title ? <p className="text-sm font-bold text-text-primary">{review.title}</p> : null}
+      {review.text ? <p className="text-sm leading-relaxed text-text-secondary">{review.text}</p> : null}
+      {isOwn && review.status === 'pending' ? (
+        <p className="text-xs text-text-tertiary">Only you can see it until our team approves it.</p>
+      ) : null}
+    </div>
+  )
+}
+
 function ProductReviewsSection({
   reviewCount,
   ratingValue,
   reviews,
+  myReview,
+  canLoadMore,
+  isLoadingMore,
+  onLoadMore,
 }: {
   reviewCount: number
   ratingValue: number
   reviews: ProductReview[]
+  /** The shopper's own review of this product, in any status. */
+  myReview: ProductReview | null
+  canLoadMore: boolean
+  isLoadingMore: boolean
+  onLoadMore: () => void
 }) {
+  // A published own review is already in the list; it is shown once, on top.
+  const others = myReview?.rid ? reviews.filter((review) => review.rid !== myReview.rid) : reviews
+  const hasAnyReview = reviewCount > 0 || myReview !== null
+
   return (
-    <div className="overflow-hidden bg-bg-primary xl:rounded-[12px] xl:border xl:border-border-primary">
+    <div className="overflow-hidden bg-bg-primary xl:rounded-card xl:border xl:border-border-primary">
       <div className="flex items-center justify-between gap-2 border-b border-border-primary p-4">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <p className="text-base font-semibold leading-5 tracking-[-0.32px] text-text-primary">
-            {reviewCount} reviews
+          <p className="text-base font-bold text-text-primary">
+            {reviewCount === 1 ? '1 review' : `${reviewCount} reviews`}
           </p>
           <span className="h-4.5 w-px bg-border-secondary" aria-hidden />
           <div className="flex items-center gap-2">
-            <span className="text-sm leading-4 tracking-[-0.28px] text-text-secondary">
-              {ratingValue.toFixed(1)}
-            </span>
+            <span className="text-sm font-semibold text-text-primary">{ratingValue.toFixed(1)}</span>
             <RatingStars value={ratingValue} size="sm" />
           </div>
         </div>
 
         <div className="hidden shrink-0 items-center overflow-hidden rounded-full bg-green-light lg:inline-flex">
-          <span className="flex items-center bg-[#004f3b] py-1 pl-1.5 pr-1">
-            <ShieldUserFillIcon className="size-4 text-primary-green" aria-hidden />
+          <span className="flex items-center bg-primary-green py-1 pl-1.5 pr-1">
+            <ShieldUserFillIcon className="size-4 text-text-inverse" aria-hidden />
           </span>
           <span className="px-2 py-1 text-xs font-medium leading-4 tracking-[-0.24px] text-primary-green">
-            All reviews are from verified purchases
-          </span>
-        </div>
-
-        <div
-          className="inline-flex shrink-0 items-center overflow-hidden rounded-full bg-green-light lg:hidden"
-          aria-label="All reviews are from verified purchases"
-        >
-          <span className="flex items-center bg-[#004f3b] py-1 pl-1 pr-1">
-            <ShieldUserFillIcon className="size-4 text-primary-green" aria-hidden />
+            Reviews come from verified purchases
           </span>
         </div>
       </div>
 
       <div className="flex flex-col gap-4 p-4">
-        {reviews.map((review, index) => (
-          <div key={`${review.author}-${index}`} className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-2 text-sm leading-4 tracking-[-0.28px]">
-              <span className="flex size-6 items-center justify-center rounded-full bg-bg-tertiary">
-                <User6LineIcon className="size-4 text-text-secondary" aria-hidden />
-              </span>
-              <span className="font-medium text-text-primary">{review.author}</span>
-              <span className="text-text-secondary">in</span>
-              <span className="font-medium text-text-primary">{review.location}</span>
-              <span className="text-text-secondary">on {review.date}</span>
-            </div>
-            <RatingStars value={review.rating} size="sm" />
-            <p className="text-sm leading-4 tracking-[-0.28px] text-text-secondary">{review.text}</p>
-          </div>
+        {myReview ? <ReviewCard review={myReview} isOwn /> : null}
+        {others.map((review, index) => (
+          <ReviewCard key={review.rid ?? `${review.author}-${index}`} review={review} />
         ))}
+        {!hasAnyReview ? (
+          <p className="text-sm text-text-secondary">
+            No reviews yet. Shoppers who buy this item can review it from <b>Your reviews</b>.
+          </p>
+        ) : null}
       </div>
 
-      <div className="flex justify-center p-4">
-        <button
-          type="button"
-          className="flex h-10 w-full max-w-50 cursor-pointer items-center justify-center rounded-full border border-text-primary px-4 text-sm font-medium leading-4 tracking-[-0.28px] text-text-primary"
-        >
-          see all reviews
-        </button>
-      </div>
+      {canLoadMore ? (
+        <div className="flex justify-center p-4 pt-0">
+          <button
+            type="button"
+            onClick={onLoadMore}
+            disabled={isLoadingMore}
+            className="flex h-10 w-full max-w-50 cursor-pointer items-center justify-center rounded-full border border-border-secondary px-4 text-sm font-bold text-text-primary transition-colors hover:border-brand hover:text-brand disabled:cursor-wait disabled:opacity-60"
+          >
+            {isLoadingMore ? 'Loading…' : 'See more reviews'}
+          </button>
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -267,7 +307,7 @@ function QuantityStepper({
         type="button"
         onClick={onDecrease}
         disabled={quantity <= 1}
-        className="flex size-8 cursor-pointer items-center justify-center rounded-full border border-[#d1d3d3] disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex size-8 cursor-pointer items-center justify-center rounded-full border border-border-secondary disabled:cursor-not-allowed disabled:opacity-50"
         aria-label="Decrease quantity"
       >
         <SubtractLineIcon className="size-5 text-text-secondary" aria-hidden />
@@ -283,6 +323,54 @@ function QuantityStepper({
       >
         <AddLineIcon className="size-5 text-text-secondary" aria-hidden />
       </button>
+    </div>
+  )
+}
+
+/**
+ * Other sizes of the same model, each uploaded as its own product. Picking one
+ * opens that product's page, the way Amazon moves between separate listings.
+ */
+function FamilyOptions({
+  family,
+  onSelect,
+}: {
+  family: ProductFamily
+  onSelect: (rid: string) => void
+}) {
+  const current = family.options.find((option) => option.isCurrent)
+
+  return (
+    <div className="border-b border-border-primary py-4 xl:p-4">
+      <p className="mb-2 text-sm text-text-secondary">
+        {family.optionName}:{' '}
+        <span className="font-bold text-text-primary">{current?.value ?? 'Choose one'}</span>
+      </p>
+      <div role="radiogroup" aria-label={family.optionName} className="flex flex-wrap gap-2">
+        {family.options.map((option) => (
+          <button
+            key={option.rid}
+            type="button"
+            role="radio"
+            aria-checked={option.isCurrent}
+            onClick={() => {
+              if (!option.isCurrent) onSelect(option.rid)
+            }}
+            className={`flex min-w-24 cursor-pointer flex-col items-start gap-0.5 rounded-xl border-2 px-3 py-2 text-left transition-colors ${
+              option.isCurrent
+                ? 'border-brand bg-brand-light'
+                : 'border-border-secondary bg-bg-primary hover:border-text-tertiary'
+            } ${option.inStock ? '' : 'opacity-60'}`}
+          >
+            <span className={`text-sm font-bold ${option.isCurrent ? 'text-brand' : 'text-text-primary'}`}>
+              {option.value}
+            </span>
+            <span className="tabular-price text-xs font-medium text-text-secondary">
+              {option.inStock ? option.price : 'Sold out'}
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -312,6 +400,7 @@ function ProductInfoPanel({
   onBuyNow,
   onShare,
   shareStatus,
+  onSelectFamilyOption,
 }: {
   product: Product
   detail: ProductDetail
@@ -337,19 +426,34 @@ function ProductInfoPanel({
   onBuyNow: () => void
   onShare: () => void
   shareStatus: string | null
+  /** Opens another size of this model (a separate product). */
+  onSelectFamilyOption: (rid: string) => void
 }) {
   // `discount` is derived from the API's `discountPercent` during mapping; the
   // promotional-notice string it replaced is no longer sent, so the badge hides
   // itself when the product has no discount.
-  const discountBadge = product.discount ?? ''
+  //
+  // The original price is only known for the default variant, so the strike
+  // price and badge show only while that variant's price is displayed; another
+  // variant at a different price would otherwise appear discounted.
+  const isDefaultPrice = splitDisplayPrice(product.price).amount === displayPriceAmount
+  const discountBadge = isDefaultPrice ? (product.discount ?? '') : ''
+  const originalPrice = isDefaultPrice ? product.originalPrice : undefined
 
   return (
-    <div className="min-w-0 flex-1 overflow-hidden bg-bg-primary xl:max-w-98 xl:rounded-[12px] xl:border xl:border-border-primary">
+    <div className="min-w-0 flex-1 overflow-hidden bg-bg-primary xl:max-w-98 xl:rounded-card xl:border xl:border-border-primary">
       <div className="border-b border-border-primary py-4 xl:p-4">
         <div className="mb-2 flex items-start gap-2">
-          <h1 className="min-w-0 flex-1 text-xl font-semibold leading-6 tracking-[-0.4px] text-text-primary">
-            {product.name}
-          </h1>
+          <div className="min-w-0 flex-1">
+            {product.brand ? (
+              <p className="mb-1 text-xs font-bold uppercase tracking-[0.08em] text-brand">
+                {product.brand}
+              </p>
+            ) : null}
+            <h1 className="font-display text-2xl font-bold leading-tight tracking-[-0.02em] text-text-primary">
+              {product.name}
+            </h1>
+          </div>
           <button
             type="button"
             onClick={onToggleLike}
@@ -385,7 +489,10 @@ function ProductInfoPanel({
         <div className="flex flex-wrap items-center gap-2 text-sm leading-4 tracking-[-0.28px] text-text-secondary">
           <RatingStars value={detail.ratingValue} size="sm" />
           <span>
-            {detail.ratingValue.toFixed(1)}({detail.reviewCount} reviews)
+            <span className="font-bold text-text-primary">{detail.ratingValue.toFixed(1)}</span>{' '}
+            {detail.reviewCount > 0
+              ? `(${detail.reviewCount} ${detail.reviewCount === 1 ? 'review' : 'reviews'})`
+              : '(no reviews yet)'}
           </span>
           <span className="h-4.5 w-px bg-border-secondary" aria-hidden />
           <span>{detail.soldCount} sold</span>
@@ -398,21 +505,34 @@ function ProductInfoPanel({
             {variantTitle}
           </p>
         ) : null}
-        <div className="mb-2 flex items-center gap-1 text-text-primary">
-          <span className="text-sm leading-4 tracking-[-0.28px]">{displayPriceCurrency}</span>
-          <span className="text-xl font-semibold leading-6 tracking-[-0.4px]">{displayPriceAmount}</span>
+        <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
+          <p
+            className={`tabular-price flex items-baseline gap-1 ${
+              discountBadge ? 'text-primary-red' : 'text-text-primary'
+            }`}
+          >
+            <span className="text-base font-bold">{displayPriceCurrency}</span>
+            <span className="text-[32px] font-extrabold leading-none tracking-[-0.02em]">
+              {displayPriceAmount}
+            </span>
+          </p>
+          {originalPrice ? (
+            <span className="tabular-price pb-0.5 text-sm text-text-tertiary line-through">
+              {originalPrice}
+            </span>
+          ) : null}
         </div>
         {/* The promo notice string is deprecated, so the badge is driven by the
             real discount percentage and hidden when there is no discount. */}
         {discountBadge ? (
-          <div className="inline-flex items-center gap-2 rounded-lg bg-orange-light px-2 py-1">
-            <PriceTag3LineIcon className="size-4 text-primary-orange" aria-hidden />
-            <span className="text-xs font-medium leading-4 tracking-[-0.24px] text-primary-orange">
-              {discountBadge}
-            </span>
+          <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-red-light px-2 py-1">
+            <PriceTag3LineIcon className="size-4 text-primary-red" aria-hidden />
+            <span className="text-xs font-bold text-primary-red">{discountBadge} off today</span>
           </div>
         ) : null}
       </div>
+
+      {detail.family ? <FamilyOptions family={detail.family} onSelect={onSelectFamilyOption} /> : null}
 
       {showVariantPicker ? (
         <div className="border-b border-border-primary py-4 xl:p-4">
@@ -431,10 +551,10 @@ function ProductInfoPanel({
                       key={`${group.key}-${value}`}
                       type="button"
                       onClick={() => onSelectOption(group.key, value)}
-                      className={`cursor-pointer rounded-lg border px-2 py-1 text-xs font-medium leading-4 tracking-[-0.24px] disabled:cursor-not-allowed disabled:opacity-50 ${
+                      className={`cursor-pointer rounded-lg border-2 px-3 py-1.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
                         isSelected
-                          ? 'border-text-primary bg-bg-secondary text-text-primary'
-                          : 'border-border-primary bg-bg-secondary text-text-tertiary'
+                          ? 'border-brand bg-brand-light text-brand'
+                          : 'border-border-secondary bg-bg-primary text-text-secondary hover:border-text-tertiary'
                       }`}
                       aria-disabled={disabled}
                     >
@@ -459,10 +579,10 @@ function ProductInfoPanel({
                       key={`${name}-${index}`}
                       type="button"
                       onClick={() => onSelectLegacyVariant(index)}
-                      className={`cursor-pointer rounded-lg border px-2 py-1 text-xs font-medium leading-4 tracking-[-0.24px] ${
+                      className={`cursor-pointer rounded-lg border-2 px-3 py-1.5 text-sm font-semibold ${
                         isSelected
-                          ? 'border-text-primary bg-bg-secondary text-text-primary'
-                          : 'border-border-primary bg-bg-secondary text-text-tertiary'
+                          ? 'border-brand bg-brand-light text-brand'
+                          : 'border-border-secondary bg-bg-primary text-text-secondary hover:border-text-tertiary'
                       }`}
                     >
                       {name}
@@ -477,7 +597,7 @@ function ProductInfoPanel({
 
       <div className="border-b border-border-primary py-4 xl:p-4">
         <div className="flex items-center gap-4">
-          <span className="text-sm font-medium leading-4 tracking-[-0.28px] text-text-primary">QTY</span>
+          <span className="text-sm font-bold text-text-primary">Quantity</span>
           <QuantityStepper
             quantity={quantity}
             onDecrease={onDecreaseQuantity}
@@ -487,7 +607,7 @@ function ProductInfoPanel({
       </div>
 
       <div className="border-b border-border-primary py-4 xl:p-4">
-        <p className="mb-2 text-sm font-medium leading-4 tracking-[-0.28px] text-text-primary">
+        <p className="mb-2 text-sm font-bold text-text-primary">
           Product Description
         </p>
         <div className="flex flex-col gap-2 text-sm leading-4 tracking-[-0.28px] text-text-primary">
@@ -498,8 +618,8 @@ function ProductInfoPanel({
       </div>
 
       {product.attributes && product.attributes.length > 0 ? (
-        <div className="border-t border-border-primary py-4">
-          <p className="mb-3 text-sm font-medium leading-4 tracking-[-0.28px] text-text-primary">
+        <div className="border-t border-border-primary py-4 xl:px-4">
+          <p className="mb-3 text-sm font-bold text-text-primary">
             Specifications
           </p>
           {/* `label` comes from the API, so the rows follow the order and wording
@@ -518,12 +638,12 @@ function ProductInfoPanel({
         </div>
       ) : null}
 
-      <div className="flex gap-4 py-4 xl:p-4">
+      <div className="flex gap-3 py-4 xl:p-4">
         <button
           type="button"
           onClick={onAddToCart}
           disabled={!inStock}
-          className="flex h-10 flex-1 cursor-pointer items-center justify-center rounded-full border border-text-primary px-4 text-sm font-medium leading-4 tracking-[-0.28px] text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-12 flex-1 cursor-pointer items-center justify-center rounded-full bg-brand-light px-4 text-base font-bold text-brand transition-colors hover:bg-brand-lighter disabled:cursor-not-allowed disabled:opacity-50"
         >
           {inStock ? 'Add to Cart' : 'Out of stock'}
         </button>
@@ -531,7 +651,7 @@ function ProductInfoPanel({
           type="button"
           onClick={onBuyNow}
           disabled={!inStock}
-          className="btn-orange flex h-10 flex-1 cursor-pointer items-center justify-center rounded-full px-4 text-sm font-medium leading-4 tracking-[-0.28px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn-brand flex h-12 flex-1 cursor-pointer items-center justify-center rounded-full px-4 text-base font-bold text-text-inverse shadow-[0_10px_24px_-10px_rgba(91,43,224,0.8)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
         >
           Buy Now
         </button>
@@ -540,80 +660,112 @@ function ProductInfoPanel({
   )
 }
 
-function ShippingSidebar({
-  shippingAddress,
-  shippingFee,
+function DeliveryRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-3 text-sm">
+      <span className="font-medium text-text-secondary">{label}</span>
+      <span className="text-right font-semibold text-text-primary">{children}</span>
+    </div>
+  )
+}
+
+/**
+ * Where the order goes and what delivery costs, from the shopper's own default
+ * address. With no address the API has nothing to quote, so the box says so
+ * and offers to add one rather than showing a made-up fee or address.
+ */
+function DeliverySidebar({
+  address,
+  deliveryFee,
+  deliveryFeeMoney,
   deliveryEstimate,
-  itemsTotal,
-  subtotal,
+  itemPrice,
+  itemPriceMoney,
   onChangeAddress,
 }: {
-  shippingAddress: { line1: string; line2: string }
-  shippingFee: string
+  address: DefaultAddress | null
+  deliveryFee: string
+  deliveryFeeMoney: { amount: number; currency: string } | null
   deliveryEstimate: string
-  itemsTotal: string
-  subtotal: string
+  itemPrice: string
+  itemPriceMoney: { amount: number; currency: string } | null
   /** Takes the user to the addresses page to set or change a default address. */
   onChangeAddress: () => void
 }) {
+  const isFree = deliveryFeeMoney?.amount === 0
+  // Only summed when both sides are in the same currency, which they are for a
+  // quoted product; anything else falls back to the item price alone.
+  const estimatedTotal =
+    deliveryFeeMoney && itemPriceMoney && deliveryFeeMoney.currency === itemPriceMoney.currency
+      ? formatAmount({
+          amount: itemPriceMoney.amount + deliveryFeeMoney.amount,
+          currency: itemPriceMoney.currency,
+        })
+      : null
+
   return (
-    <aside className="flex w-full shrink-0 flex-col overflow-hidden bg-bg-primary xl:w-90 xl:rounded-[12px] xl:border xl:border-border-primary">
+    <aside className="flex w-full shrink-0 flex-col overflow-hidden bg-bg-primary xl:w-90 xl:rounded-card xl:border xl:border-border-primary">
       <div className="border-b border-border-primary py-4 xl:p-4">
-        <div className="mb-2 flex items-start justify-between gap-2">
-          <p className="text-base font-medium leading-5 tracking-[-0.32px] text-text-primary">Shipping</p>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <p className="flex items-center gap-2 text-base font-bold text-text-primary">
+            <TruckLineIcon className="size-5 text-brand" aria-hidden />
+            Delivery
+          </p>
           <button
             type="button"
             onClick={onChangeAddress}
-            className="group flex cursor-pointer items-center gap-1 text-sm leading-4 tracking-[-0.28px] text-text-primary"
+            className="group flex cursor-pointer items-center gap-0.5 text-sm font-semibold text-brand hover:text-brand-dark"
           >
-            Change
-            <ArrowRightSLineIcon
-              className="size-4 text-text-secondary transition-colors group-hover:text-primary-orange"
-              aria-hidden
-            />
+            {address ? 'Change' : 'Add address'}
+            <ArrowRightSLineIcon className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
           </button>
         </div>
-        <div className="rounded-lg bg-bg-secondary p-2">
-          <div className="mb-4 flex flex-col gap-2">
-            <p className="text-sm font-medium leading-4 tracking-[-0.28px] text-text-primary">Address:</p>
-            <div className="flex flex-col gap-1 text-sm leading-4 tracking-[-0.28px] text-text-primary">
-              <p>{shippingAddress.line1}</p>
-              <p>{shippingAddress.line2}</p>
+        <div className="flex flex-col gap-3 rounded-xl bg-bg-secondary p-3">
+          {address ? (
+            <div className="flex items-start gap-2 text-sm text-text-primary">
+              <MapPin2LineIcon className="mt-0.5 size-4 shrink-0 text-text-tertiary" aria-hidden />
+              <div className="min-w-0">
+                {address.contactName ? <p className="font-semibold">{address.contactName}</p> : null}
+                {address.line1 ? <p>{address.line1}</p> : null}
+                {address.line2 ? <p>{address.line2}</p> : null}
+              </div>
             </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between gap-2 text-sm leading-4 tracking-[-0.28px]">
-              <span className="font-medium text-text-primary">Shipping Fee:</span>
-              <span className="text-right text-text-primary">{shippingFee}</span>
-            </div>
-            <div className="flex items-center justify-between gap-2 text-sm leading-4 tracking-[-0.28px]">
-              <span className="font-medium text-text-primary">Delivery:</span>
-              <span className="text-right text-text-primary">{deliveryEstimate}</span>
-            </div>
+          ) : (
+            <p className="text-sm text-text-secondary">
+              Add a delivery address to see the delivery fee and arrival date for this item.
+            </p>
+          )}
+          <div className="flex flex-col gap-2 border-t border-border-secondary pt-3">
+            <DeliveryRow label="Delivery fee">
+              {isFree ? (
+                <span className="text-primary-green">Free</span>
+              ) : (
+                deliveryFee || <span className="font-medium text-text-tertiary">Calculated at checkout</span>
+              )}
+            </DeliveryRow>
+            <DeliveryRow label="Estimated arrival">
+              {deliveryEstimate || <span className="font-medium text-text-tertiary">Shown at checkout</span>}
+            </DeliveryRow>
           </div>
         </div>
       </div>
 
       <div className="border-b border-border-primary py-4 xl:p-4">
         <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-2 text-sm leading-4 tracking-[-0.28px]">
-            <span className="font-medium text-text-primary">Items Total:</span>
-            <span className="text-right text-text-primary">{itemsTotal}</span>
-          </div>
-          <div className="flex items-center justify-between gap-2 text-sm leading-4 tracking-[-0.28px]">
-            <span className="font-medium text-text-primary">Shipping:</span>
-            <span className="text-right text-text-primary">{deliveryEstimate}</span>
-          </div>
-          <div className="flex items-center justify-between gap-2 text-base font-medium leading-5 tracking-[-0.32px] text-text-primary">
-            <span>Subtotal</span>
-            <span className="text-right">{subtotal}</span>
+          <DeliveryRow label="Item price">{itemPrice}</DeliveryRow>
+          <DeliveryRow label="Delivery">
+            {isFree ? 'Free' : deliveryFee || <span className="font-medium text-text-tertiary">At checkout</span>}
+          </DeliveryRow>
+          <div className="flex items-center justify-between gap-2 pt-1 text-base font-bold text-text-primary">
+            <span>{estimatedTotal ? 'Estimated total' : 'Subtotal'}</span>
+            <span className="tabular-price text-right">{estimatedTotal ?? itemPrice}</span>
           </div>
         </div>
       </div>
 
       <div className="flex flex-col gap-4 py-4 xl:p-4">
         <div className="flex items-center gap-2">
-          <p className="text-base font-medium leading-5 tracking-[-0.32px] text-text-primary">
+          <p className="text-base font-bold text-text-primary">
             Order Protection
           </p>
           <ArrowRightSLineIcon className="size-5 text-text-secondary" aria-hidden />
@@ -627,7 +779,7 @@ function ShippingSidebar({
             </p>
           </div>
           <p className="text-xs leading-4 tracking-[-0.24px] text-text-secondary">
-            Every payment you make on H&CO is secured with strict SSL encryption and PCI DSS data
+            Every payment you make on olloo is secured with strict SSL encryption and PCI DSS data
             protection protocols
           </p>
         </div>
@@ -640,7 +792,7 @@ function ShippingSidebar({
             </p>
           </div>
           <p className="text-xs leading-4 tracking-[-0.24px] text-text-secondary">
-            Claim a refund if your order doesn&apos;t ship, is missing, or arrives with product issues
+            Claim a refund if your order isn&apos;t dispatched, goes missing, or arrives with product issues
           </p>
         </div>
       </div>
@@ -650,6 +802,7 @@ function ShippingSidebar({
 
 export function ProductDetailView({
   context,
+  deliveryAddress,
   onGoHome,
   onBackToListing,
   onGoToCart,
@@ -672,13 +825,19 @@ export function ProductDetailView({
   const variantState = useProductDetailSelection(detail)
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
   const [reviews, setReviews] = useState<ProductReview[]>(detail.reviews)
+  const [myReview, setMyReview] = useState<ProductReview | null>(null)
+  const [reviewTotal, setReviewTotal] = useState(0)
+  const [reviewPage, setReviewPage] = useState(1)
+  const [isLoadingMoreReviews, setIsLoadingMoreReviews] = useState(false)
+  const { authUser } = useAuth()
+  const isSignedIn = authUser !== null
 
   const isLiked = isProductLiked(product.id)
   // Related cards show delivery quotes, which need a known destination.
   const { country } = useProductDestination()
 
   useEffect(() => {
-    document.title = `${product.name} | H&CO.`
+    document.title = `${product.name} | olloo`
   }, [product.name])
 
   useEffect(() => {
@@ -688,13 +847,20 @@ export function ProductDetailView({
       try {
         const [relatedResponse, reviewsResponse] = await Promise.all([
           catalogApi.getRelatedProducts(product.id, { country }),
-          catalogApi.getProductReviews(product.id),
+          catalogApi.getProductReviews(product.id, 1, REVIEWS_PAGE_SIZE, { signedIn: isSignedIn }),
         ])
 
         if (!cancelled) {
           setRelatedProducts(relatedResponse.items.map(mapApiProduct))
           // The API sends `createdAt` instead of a preformatted `date` string.
           setReviews(reviewsResponse.reviews.map(mapApiProductReview))
+          setReviewTotal(reviewsResponse.total)
+          setReviewPage(1)
+          setMyReview(
+            reviewsResponse.myReview
+              ? { ...mapApiProductReview(reviewsResponse.myReview), status: reviewsResponse.myReview.status }
+              : null,
+          )
         }
       } catch {
         if (!cancelled) {
@@ -709,13 +875,38 @@ export function ProductDetailView({
     return () => {
       cancelled = true
     }
-  }, [country, detail.reviews, product.id])
+  }, [country, detail.reviews, isSignedIn, product.id])
+
+  const loadMoreReviews = async () => {
+    setIsLoadingMoreReviews(true)
+    try {
+      const next = reviewPage + 1
+      const response = await catalogApi.getProductReviews(product.id, next, REVIEWS_PAGE_SIZE, {
+        signedIn: isSignedIn,
+      })
+      setReviews((current) => [...current, ...response.reviews.map(mapApiProductReview)])
+      setReviewPage(next)
+    } finally {
+      setIsLoadingMoreReviews(false)
+    }
+  }
+
+  const reviewsSectionProps = {
+    reviewCount: detail.reviewCount,
+    ratingValue: detail.ratingValue,
+    reviews,
+    myReview,
+    canLoadMore: reviews.length < reviewTotal,
+    isLoadingMore: isLoadingMoreReviews,
+    onLoadMore: () => void loadMoreReviews(),
+  }
 
   const selectedVariantId = variantState.selectedVariant?.rid
 
   const handleAddToCart = () => {
     if (!variantState.inStock) return
-    void addToCart(product, quantity, selectedVariantId)
+    // A failure is reported by the add-to-cart notice, so it is not rethrown here.
+    addToCart(product, quantity, selectedVariantId).catch(() => undefined)
   }
 
   const handleBuyNow = async () => {
@@ -726,7 +917,8 @@ export function ProductDetailView({
       if (existingItem) {
         await updateCartItem(existingItem.id, { quantity: existingItem.quantity + quantity })
       } else {
-        await addToCart(product, quantity, selectedVariantId)
+        // Buy Now opens the cart straight away, so no add-to-cart notice.
+        await addToCart(product, quantity, selectedVariantId, { notify: false })
       }
     } catch {
       // Cart stayed unchanged; still take the user to the cart so they can see why.
@@ -773,11 +965,7 @@ export function ProductDetailView({
               onActiveIndexChange={variantState.setGalleryIndex}
             />
             <div className="hidden xl:block">
-              <ProductReviewsSection
-                reviewCount={detail.reviewCount}
-                ratingValue={detail.ratingValue}
-                reviews={reviews}
-              />
+              <ProductReviewsSection {...reviewsSectionProps} />
             </div>
           </div>
 
@@ -808,32 +996,36 @@ export function ProductDetailView({
             onBuyNow={() => void handleBuyNow()}
             onShare={handleShare}
             shareStatus={shareStatus}
+            onSelectFamilyOption={(rid) =>
+              navigate(getProductPathForListingSelection(rid, selection, categories))
+            }
           />
 
-          <ShippingSidebar
-            shippingAddress={detail.shippingAddress}
-            shippingFee={detail.shippingFee}
+          <DeliverySidebar
+            address={deliveryAddress}
+            deliveryFee={detail.shippingFee}
+            deliveryFeeMoney={detail.deliveryFeeMoney}
             deliveryEstimate={detail.deliveryEstimate}
-            itemsTotal={detail.itemsTotal}
-            subtotal={detail.subtotal}
+            itemPrice={detail.itemsTotal}
+            itemPriceMoney={
+              product.priceAmount !== undefined && product.priceCurrency
+                ? { amount: product.priceAmount, currency: product.priceCurrency }
+                : null
+            }
             onChangeAddress={handleChangeAddress}
           />
 
           <div className="xl:hidden">
-            <ProductReviewsSection
-              reviewCount={detail.reviewCount}
-              ratingValue={detail.ratingValue}
-              reviews={reviews}
-            />
+            <ProductReviewsSection {...reviewsSectionProps} />
           </div>
         </div>
       </section>
 
       <section className="border-t border-border-primary px-4 py-6 lg:px-16 lg:py-10">
-        <h2 className="mb-4 text-xl font-medium leading-6 tracking-[-0.4px] text-text-primary lg:mb-10 lg:text-[32px] lg:leading-10 lg:tracking-[-0.64px]">
+        <h2 className="font-display mb-4 text-xl font-bold tracking-[-0.02em] text-text-primary lg:mb-6 lg:text-[28px]">
           You may also like
         </h2>
-        <div className="grid grid-cols-2 items-stretch gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid grid-cols-2 items-stretch gap-2.5 sm:grid-cols-3 lg:grid-cols-4 lg:gap-3 xl:grid-cols-5">
           {relatedProducts.map((relatedProduct) => (
             <ProductCard
               key={relatedProduct.id}

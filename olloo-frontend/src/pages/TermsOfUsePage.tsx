@@ -10,13 +10,11 @@ import { getCartPath, getHomePath, getWishlistPath } from '../data/shopRoutes'
 export function TermsOfUsePage() {
   const navigate = useNavigate()
   const {
-    activeCategoryId,
     categoriesTargetId,
     closeCategories,
     handleSubcategorySelect,
     isCategoriesOpen,
     toggleCategories,
-    toggleCategoriesFromLinkBar,
   } = useCategoryNavigation()
 
   const handleOpenCart = useCallback(() => {
@@ -40,8 +38,6 @@ export function TermsOfUsePage() {
         onCloseCategories={closeCategories}
         onSubcategorySelect={handleSubcategorySelect}
         showCategoryLinksBar
-        onOpenCategories={toggleCategoriesFromLinkBar}
-        activeCategoryId={activeCategoryId}
         onOpenCart={handleOpenCart}
         onOpenWishlist={handleOpenWishlist}
         onAfterSignOut={handleGoHome}
@@ -49,7 +45,7 @@ export function TermsOfUsePage() {
       />
       <div className="mx-auto w-full min-w-0 max-w-360 overflow-x-clip bg-bg-primary">
         <TermsOfUsePageContent onGoHome={handleGoHome} />
-        <Footer onOpenCategories={toggleCategoriesFromLinkBar} />
+        <Footer />
       </div>
       <BackToTopButton />
     </>

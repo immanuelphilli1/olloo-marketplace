@@ -1,8 +1,11 @@
-import { useMemo } from 'react'
+import { createElement, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { resolveAssetUrl } from '../api/mappers'
 import { useCatalog } from '../context/CatalogContext'
 import { getCategoryNodeId } from '../data/catalogCategories'
-import type { SidebarCategoryId } from '../data/categoriesModal'
+import { getCategoryNavIcon } from '../data/categoryNavIcons'
+import { getCategoryPath } from '../data/shopRoutes'
+import { SectionHeading } from './SectionHeading'
 
 type CategoryGridCard = {
   id: string
@@ -13,10 +16,10 @@ type CategoryGridCard = {
 
 function formatProductBadge(count: number): string {
   if (count === 1) {
-    return '1 Product'
+    return '1 product'
   }
 
-  return `${count} Products`
+  return `${count} products`
 }
 
 function productsInCategory(
@@ -37,58 +40,53 @@ function countProductsForCategory(
   return productsInCategory(items, categoryId).length
 }
 
-function productImageForCategory(
-  items: Array<{ categoryId?: string; image?: string }>,
-  categoryId: string,
-  categoryImageUrl: string | null,
-): string | null {
-  const match = productsInCategory(items, categoryId).find((item) => item.image)
-  if (match?.image) return match.image
-  return categoryImageUrl
-}
-
 function CategoryCardItem({
   id,
   imageUrl,
-  badge,
   title,
-  onOpenCategories,
-  className = '',
-}: CategoryGridCard & {
-  badge: string
-  onOpenCategories: (categoryId: SidebarCategoryId | string, label: string) => void
-  className?: string
-}) {
+}: CategoryGridCard & { badge: string }) {
   return (
-    <button
-      type="button"
-      onClick={() => onOpenCategories(id, title)}
-      aria-label={`Browse ${title}`}
-      className={`relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-lg border border-border-primary bg-bg-secondary text-left ${className}`}
+    <Link
+      to={getCategoryPath(id)}
+      onClick={() => window.scrollTo({ top: 0 })}
+      // `relative` keeps the visually hidden caption (sr-only is absolutely
+      // positioned) inside the tile; without it the caption escaped the
+      // scrolling row and widened the whole page on phones.
+      className="group relative flex w-21 cursor-pointer flex-col items-center gap-2 text-center lg:w-full"
     >
-      {imageUrl ? (
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <img alt="" className="absolute size-full object-cover" src={imageUrl} />
-          <div className="absolute inset-0 bg-[rgba(0,6,7,0.2)]" />
-        </div>
-      ) : null}
-      <div className="relative p-4">
-        <span className="hidden rounded-full bg-glass px-2 py-1 text-xs font-medium tracking-[-0.24px] text-text-inverse">
-          {badge}
+      <span className="relative block aspect-square w-full overflow-hidden rounded-full bg-bg-secondary ring-2 ring-transparent ring-offset-2 transition-[box-shadow] duration-300 group-hover:ring-brand">
+        {imageUrl ? (
+          <img
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-110"
+            src={imageUrl}
+          />
+        ) : (
+          // No category image yet: the category's own name fills the tile.
+          <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-brand-light to-accent-light p-2 text-brand">
+            {/* The icon is looked up from a fixed map, not created per render. */}
+            {createElement(getCategoryNavIcon(id), {
+              className: 'size-5 shrink-0 lg:size-7',
+              'aria-hidden': true,
+            })}
+            <span className="line-clamp-2 font-display text-[11px] font-bold leading-tight text-text-primary lg:text-sm">
+              {title}
+            </span>
+          </span>
+        )}
+      </span>
+      <span className={imageUrl ? 'flex flex-col' : 'sr-only'}>
+        <span className="line-clamp-2 text-xs font-semibold leading-tight text-text-primary group-hover:text-brand lg:text-sm">
+          {title}
         </span>
-      </div>
-      <div className="relative p-4">
-        <h3 className="text-sm font-medium tracking-[-0.28px] text-text-inverse">{title}</h3>
-      </div>
-    </button>
+        {/* <span className="mt-0.5 hidden text-xs text-text-tertiary lg:block">{badge}</span> */}
+      </span>
+    </Link>
   )
 }
 
-export function CategoryGridSection({
-  onOpenCategories,
-}: {
-  onOpenCategories: (categoryId: SidebarCategoryId | string, label?: string) => void
-}) {
+export function CategoryGridSection({ onShopAll }: { onShopAll: () => void }) {
   const { categories: apiCategories, allProducts, isReady } = useCatalog()
 
   const categories = useMemo((): CategoryGridCard[] => {
@@ -98,9 +96,9 @@ export function CategoryGridSection({
 
     return apiCategories.map((category) => {
       const id = getCategoryNodeId(category)
-      const categoryImageUrl =
-        resolveAssetUrl(category.imageUrl ?? category.image ?? undefined) || null
-      const imageUrl = productImageForCategory(allProducts, id, categoryImageUrl)
+      // The category's own image only. Borrowing a product photo made a
+      // department look like whichever item happened to load first.
+      const imageUrl = resolveAssetUrl(category.imageUrl ?? category.image ?? undefined) || null
       return {
         id,
         imageUrl,
@@ -115,23 +113,20 @@ export function CategoryGridSection({
   }
 
   return (
-    <section className="px-4 lg:px-16">
-      <h2 className="text-base pt-6 lg:pt-0 font-medium leading-6 tracking-[-0.32px] text-text-primary lg:text-2xl lg:leading-10 lg:tracking-[-0.64px]">
-        Shop by Category
-      </h2>
-      <div className="py-4 lg:py-6">
-        <div className="flex gap-2 overflow-x-auto scroll-smooth [-ms-overflow-style:none] scrollbar-none lg:grid lg:grid-cols-6 lg:overflow-visible [&::-webkit-scrollbar]:hidden">
-          {categories.map((category) => (
-            <div key={category.id} className="shrink-0 lg:min-w-0 lg:shrink">
-              <CategoryCardItem
-                {...category}
-                badge={formatProductBadge(category.productCount)}
-                onOpenCategories={onOpenCategories}
-                className="size-40 lg:aspect-square lg:size-auto lg:w-full"
-              />
-            </div>
-          ))}
-        </div>
+    <section className="flex flex-col gap-4 px-4 lg:gap-6 lg:px-16">
+      <SectionHeading
+        title="Shop by category"
+        action={{ label: 'See all', onClick: onShopAll }}
+      />
+      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 scrollbar-none lg:mx-0 lg:grid lg:grid-cols-8 lg:gap-6 lg:overflow-visible lg:px-0">
+        {categories.map((category) => (
+          <div key={category.id} className="shrink-0 lg:min-w-0">
+            <CategoryCardItem
+              {...category}
+              badge={formatProductBadge(category.productCount)}
+            />
+          </div>
+        ))}
       </div>
     </section>
   )

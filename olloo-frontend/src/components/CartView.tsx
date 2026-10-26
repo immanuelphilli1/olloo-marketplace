@@ -33,7 +33,7 @@ function CartCheckbox({
       aria-pressed={checked}
       className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-border-secondary bg-bg-primary"
     >
-      {checked ? <span className="size-4 rounded-full bg-text-primary" aria-hidden /> : null}
+      {checked ? <span className="size-4 rounded-full bg-brand" aria-hidden /> : null}
     </button>
   )
 }
@@ -58,7 +58,7 @@ function CartItemRow({
       {item.available === false ? (
         <p
           role="alert"
-          className="mb-3 rounded-lg bg-orange-light px-3 py-2 text-xs font-medium leading-4 tracking-[-0.24px] text-primary-orange"
+          className="mb-3 rounded-lg bg-brand-light px-3 py-2 text-xs font-medium leading-4 tracking-[-0.24px] text-brand"
         >
           This item is no longer available. Remove it to continue.
         </p>
@@ -183,7 +183,7 @@ function CartPriceChangeNotice({ item }: { item: CartItem }) {
   if (item.previousPrice === undefined || item.previousPrice === item.price) return null
 
   return (
-    <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs leading-4 tracking-[-0.24px] text-primary-orange">
+    <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs leading-4 tracking-[-0.24px] text-brand">
       <span className="font-medium">Price changed</span>
       <span className="text-text-secondary line-through">
         {item.currency} {formatAmountDecimal(item.previousPrice)}
@@ -220,7 +220,7 @@ export function CartView({ onGoHome, onCheckout, onGoToProduct }: CartViewProps)
   const recommendationProducts = useRecommendations('cart')
 
   useEffect(() => {
-    document.title = 'Cart | H&CO.'
+    document.title = 'Cart | olloo'
   }, [])
 
   const selectedCount = useMemo(() => cartItems.filter((item) => item.selected).length, [cartItems])
@@ -262,7 +262,7 @@ export function CartView({ onGoHome, onCheckout, onGoToProduct }: CartViewProps)
             {cartError ? (
               <p
                 role="alert"
-                className="mb-4 rounded-xl bg-orange-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-primary-orange"
+                className="mb-4 rounded-xl bg-brand-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-brand"
               >
                 {cartError}
               </p>
@@ -355,7 +355,7 @@ export function CartView({ onGoHome, onCheckout, onGoToProduct }: CartViewProps)
         </div>
 
         <div className="mt-10 lg:mt-14">
-          <h2 className="mb-4 text-xl font-medium leading-6 tracking-[-0.4px] text-text-primary lg:text-2xl lg:leading-8 lg:tracking-[-0.48px]">
+          <h2 className="font-display mb-4 text-xl font-bold tracking-[-0.02em] text-text-primary lg:text-[28px]">
             You may also like
           </h2>
           <div className="grid grid-cols-2 items-stretch gap-2 lg:grid-cols-5 lg:gap-2">

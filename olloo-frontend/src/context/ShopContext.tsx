@@ -18,6 +18,28 @@ import type { Product } from '../data/products'
 import { getProductKey } from '../data/products'
 import { useAuth } from './AuthContext'
 
+/**
+ * The outcome of an add-to-cart, confirmed to the shopper by `CartToast`.
+ * `id` changes on every add, so repeated adds of one product each get their
+ * own notice and timer.
+ */
+export type CartNotice =
+  | {
+      id: number
+      kind: 'added'
+      productName: string
+      image: string
+      quantity: number
+      /** Display price of one unit, e.g. `GHS 2,093.42`. */
+      price: string
+    }
+  | { id: number; kind: 'error'; productName: string; message: string }
+
+type AddToCartOptions = {
+  /** Show the add-to-cart notice. Off for flows that open the cart anyway (Buy Now). */
+  notify?: boolean
+}
+
 type ShopContextValue = {
   cartItems: CartItem[]
   cartItemCount: number
@@ -29,7 +51,15 @@ type ShopContextValue = {
   refreshCart: () => Promise<void>
   /** Applies a cart response the caller already has, avoiding a redundant GET. */
   applyCartResponse: (response: Awaited<ReturnType<typeof cartApi.getCart>>) => void
-  addToCart: (product: Product, quantity?: number, variantId?: string) => Promise<void>
+  addToCart: (
+    product: Product,
+    quantity?: number,
+    variantId?: string,
+    options?: AddToCartOptions,
+  ) => Promise<void>
+  /** The latest add-to-cart outcome to show, until it is dismissed. */
+  cartNotice: CartNotice | null
+  dismissCartNotice: () => void
   findCartItemForProduct: (product: Product, variantId?: string) => CartItem | undefined
   updateCartItem: (itemId: string, patch: { quantity?: number; selected?: boolean }) => Promise<void>
   removeCartItem: (itemId: string) => Promise<void>
@@ -67,6 +97,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const [isCartLoading, setIsCartLoading] = useState(true)
   /** Explains a rejected cart mutation (e.g. not enough stock). */
   const [cartError, setCartError] = useState<string | null>(null)
+  const [cartNotice, setCartNotice] = useState<CartNotice | null>(null)
   const [wishlistProducts, setWishlistProducts] = useState<Product[]>([])
   const [isWishlistLoading, setIsWishlistLoading] = useState(false)
   const [lastOrder, setLastOrderState] = useState<LastOrder | null>(() => readLastOrder())
@@ -141,18 +172,44 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     [cartItems],
   )
 
-  const addToCart = useCallback(async (product: Product, quantity = 1, variantId?: string) => {
-    try {
-      const response = await cartApi.addCartItem(product.id, quantity, variantId)
-      applyCartResponse(setCartItems, setCartSummary, response)
-    } catch (error) {
-      // `insufficient_stock` and `currency_mismatch` arrive as 422 with a
-      // shopper-readable reason, so they are surfaced instead of swallowed.
-      const message = getCartErrorMessage(error)
-      if (message) setCartError(message)
-      throw error
-    }
-  }, [])
+  const addToCart = useCallback(
+    async (product: Product, quantity = 1, variantId?: string, options: AddToCartOptions = {}) => {
+      const notify = options.notify ?? true
+      try {
+        const response = await cartApi.addCartItem(product.id, quantity, variantId)
+        applyCartResponse(setCartItems, setCartSummary, response)
+        if (notify) {
+          setCartNotice({
+            id: Date.now(),
+            kind: 'added',
+            productName: product.name,
+            image: product.image,
+            quantity,
+            price: product.price,
+          })
+        }
+      } catch (error) {
+        // `insufficient_stock` and `currency_mismatch` arrive as 422 with a
+        // shopper-readable reason, so they are surfaced instead of swallowed.
+        const message = getCartErrorMessage(error)
+        if (message) setCartError(message)
+        // Adds happen away from the cart page, where `cartError` is not shown,
+        // so the notice carries the reason too.
+        if (notify) {
+          setCartNotice({
+            id: Date.now(),
+            kind: 'error',
+            productName: product.name,
+            message: message ?? 'We could not add this item. Please try again.',
+          })
+        }
+        throw error
+      }
+    },
+    [],
+  )
+
+  const dismissCartNotice = useCallback(() => setCartNotice(null), [])
 
   /**
    * Finds the cart line already holding this product, so callers can update it
@@ -266,6 +323,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       refreshCart,
       applyCartResponse: applyCart,
       addToCart,
+      cartNotice,
+      dismissCartNotice,
       findCartItemForProduct,
       updateCartItem,
       removeCartItem,
@@ -284,6 +343,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     }),
     [
       addToCart,
+      cartNotice,
+      dismissCartNotice,
       applyCart,
       findCartItemForProduct,
       cartItemCount,

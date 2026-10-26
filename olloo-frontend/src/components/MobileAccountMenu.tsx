@@ -130,12 +130,12 @@ export function MobileAccountMenu({
                   }}
                   aria-current={isActive ? 'page' : undefined}
                   className={`flex w-full cursor-pointer items-center gap-2 rounded-lg p-3 text-left transition-colors active:bg-bg-secondary ${
-                    isActive ? 'bg-orange-light' : 'hover:bg-orange-light'
+                    isActive ? 'bg-brand-light' : 'hover:bg-brand-light'
                   }`}
                 >
                   <span
                     className={`flex-1 text-base font-medium tracking-[-0.32px] ${
-                      isActive ? 'text-primary-orange' : 'text-text-primary'
+                      isActive ? 'text-brand' : 'text-text-primary'
                     }`}
                   >
                     {item.label}
@@ -153,7 +153,7 @@ export function MobileAccountMenu({
                 onClose()
                 onSignOut()
               }}
-              className="mt-2 w-full cursor-pointer rounded-lg p-3 text-left text-base font-medium tracking-[-0.32px] text-text-primary transition-colors hover:bg-orange-light active:bg-bg-secondary"
+              className="mt-2 w-full cursor-pointer rounded-lg p-3 text-left text-base font-medium tracking-[-0.32px] text-text-primary transition-colors hover:bg-brand-light active:bg-bg-secondary"
             >
               Sign Out
             </button>

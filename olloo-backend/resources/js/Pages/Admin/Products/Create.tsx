@@ -57,6 +57,9 @@ export default function Create({
         is_new_arrival: false,
         attributes: [],
         variants: [newVariant(true)],
+        family_key: '',
+        family_option_name: 'Size',
+        family_option_value: '',
     });
 
     const submit = (intent: 'save' | 'add_another') => {
@@ -103,7 +106,14 @@ export type ProductFormData = {
     is_new_arrival: boolean;
     attributes: ProductAttributeRow[];
     variants: VariantFormData[];
+    /** Shared by every size of one model; empty when the product stands alone. */
+    family_key: string;
+    family_option_name: string;
+    family_option_value: string;
 };
+
+/** Another product in the same family, listed on the edit page for context. */
+export type FamilyMember = { rid: string; name: string; optionValue: string | null; isActive: boolean };
 
 export type ProductAttributeRow = { attribute_rid: string; value: string };
 
@@ -155,7 +165,7 @@ export function newVariant(isDefault: boolean): VariantFormData {
     return { rid: null, name: isDefault ? 'Standard' : '', size: '', color: '', sku: '', price: '', track_stock: true, stock_quantity: '', handling_days: '', is_default: isDefault };
 }
 
-type Section = 'basics' | 'organization' | 'pricing' | 'inventory' | 'attributes' | 'media' | 'visibility';
+type Section = 'basics' | 'organization' | 'pricing' | 'inventory' | 'attributes' | 'family' | 'media' | 'visibility';
 
 // Display order; also decides which error gets focus first.
 export const PRODUCT_FIELDS: FormFieldMeta<Section>[] = [
@@ -170,6 +180,9 @@ export const PRODUCT_FIELDS: FormFieldMeta<Section>[] = [
     { key: 'shipping_class_rid', label: 'Shipping class', section: 'inventory' },
     { key: 'variants', label: 'Variants', section: 'inventory' },
     { key: 'attributes', label: 'Attributes', section: 'attributes' },
+    { key: 'family_key', label: 'Family', section: 'family' },
+    { key: 'family_option_name', label: 'Option name', section: 'family' },
+    { key: 'family_option_value', label: 'This product\'s option', section: 'family' },
     { key: 'image', label: 'Image', section: 'media' },
     { key: 'gallery', label: 'Gallery', section: 'media' },
     { key: 'is_active', label: 'Visible in store', section: 'visibility' },
@@ -192,6 +205,7 @@ export function ProductForm({
     submitLabel,
     secondaryAction,
     cancelHref,
+    familyMembers = [],
 }: {
     form: ProductFormHelper;
     categoryTree: CategoryPickerNode[];
@@ -206,6 +220,8 @@ export function ProductForm({
     submitLabel: string;
     secondaryAction?: { label: string; onClick: () => void };
     cancelHref: string;
+    /** Edit page only: the products already sharing this family key. */
+    familyMembers?: FamilyMember[];
 }) {
     const { data, setData, errors, processing, isDirty } = form;
     const [slugLinked, setSlugLinked] = useState(autoSlug);
@@ -457,6 +473,91 @@ export function ProductForm({
                     />
                 </FormSection>
 
+                <FormSection
+                    title="Size options (optional)"
+                    description="Link separate products that are the same model in different sizes, such as a TV in 32 and 43 inch. Each product page then shows the others as options with their prices."
+                    hasError={sectionHasError('family')}
+                >
+                    <Field
+                        id="family_key"
+                        label="Family"
+                        helper="Use the same family on every size of this model. Leave empty if this product stands alone."
+                        error={errors.family_key}
+                    >
+                        <input
+                            id="field-family_key"
+                            type="text"
+                            value={data.family_key}
+                            onChange={(e) => setData('family_key', e.target.value)}
+                            aria-invalid={Boolean(errors.family_key)}
+                            className={inputClass(errors.family_key)}
+                            placeholder="TCL P635 TV"
+                            maxLength={120}
+                        />
+                    </Field>
+                    {data.family_key.trim() !== '' ? (
+                        <>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <Field
+                                    id="family_option_name"
+                                    label="Option name"
+                                    helper="What shoppers choose: Size, Capacity, Power."
+                                    error={errors.family_option_name}
+                                >
+                                    <input
+                                        id="field-family_option_name"
+                                        type="text"
+                                        value={data.family_option_name}
+                                        onChange={(e) => setData('family_option_name', e.target.value)}
+                                        aria-invalid={Boolean(errors.family_option_name)}
+                                        className={inputClass(errors.family_option_name)}
+                                        placeholder="Size"
+                                        maxLength={40}
+                                    />
+                                </Field>
+                                <Field
+                                    id="family_option_value"
+                                    label="This product's option"
+                                    helper="Shown on the option button."
+                                    error={errors.family_option_value}
+                                >
+                                    <input
+                                        id="field-family_option_value"
+                                        type="text"
+                                        value={data.family_option_value}
+                                        onChange={(e) => setData('family_option_value', e.target.value)}
+                                        aria-invalid={Boolean(errors.family_option_value)}
+                                        className={inputClass(errors.family_option_value)}
+                                        placeholder="43 inch"
+                                        maxLength={60}
+                                    />
+                                </Field>
+                            </div>
+                            {familyMembers.length > 0 ? (
+                                <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
+                                    <p className="font-medium text-slate-700">Also in this family</p>
+                                    <ul className="mt-1 space-y-1">
+                                        {familyMembers.map((member) => (
+                                            <li key={member.rid} className="flex items-center justify-between gap-3">
+                                                <Link
+                                                    href={route('admin.products.edit', member.rid)}
+                                                    className="cursor-pointer truncate text-brand hover:underline"
+                                                >
+                                                    {member.name}
+                                                </Link>
+                                                <span className="shrink-0 text-slate-500">
+                                                    {member.optionValue ?? 'No option set'}
+                                                    {member.isActive ? '' : ' · hidden'}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ) : null}
+                        </>
+                    ) : null}
+                </FormSection>
+
                 <FormSection title="Images" hasError={sectionHasError('media')}>
                     <Field
                         id="image"
@@ -513,7 +614,7 @@ export function ProductForm({
                     <button
                         type="submit"
                         disabled={processing}
-                        className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         {processing ? 'Saving…' : submitLabel}
                     </button>

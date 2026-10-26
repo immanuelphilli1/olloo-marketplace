@@ -170,15 +170,12 @@ export function HomePage() {
   // Grouped members (e.g. "accessories" under "Fashion & Accessories") resolve to
   // their major category so the link bar always highlights the right entry.
   const {
-    activeCategoryId,
     categoriesTargetId,
     closeCategories,
     handleSubcategorySelect,
     isCategoriesOpen,
     openCategories,
-    openToInitialCategory,
     toggleCategories,
-    toggleCategoriesFromLinkBar,
   } = useCategoryNavigation({
     scrollOnNavigate: true,
     routeCategoryId: categoryListing ? categoryListing.categoryId : undefined,
@@ -651,9 +648,6 @@ export function HomePage() {
         // The link bar is part of the site header, so it shows on every view
         // (product detail, cart, wishlist, checkout) just like the other pages.
         showCategoryLinksBar
-        onOpenCategories={toggleCategoriesFromLinkBar}
-        activeCategoryId={activeCategoryId}
-        openToInitialCategory={openToInitialCategory}
       />
       <div className="mx-auto w-full min-w-0 max-w-360 overflow-x-clip bg-bg-primary">
         {paymentReturnStep ? (
@@ -666,7 +660,7 @@ export function HomePage() {
                 onGoToCart={handleGoToCart}
               />
             </main>
-            <Footer onOpenCategories={openCategories} />
+            <Footer />
           </>
         ) : showProductDetail ? (
           <>
@@ -674,6 +668,7 @@ export function HomePage() {
               {productDetail ? (
                 <ProductDetailView
                   context={productDetail}
+                  deliveryAddress={authUser ? defaultAddress : null}
                   onGoHome={handleGoHome}
                   onBackToListing={handleBackToListing}
                   onGoToCart={handleOpenCart}
@@ -685,7 +680,7 @@ export function HomePage() {
                 </div>
               )}
             </main>
-            <Footer onOpenCategories={openCategories} />
+            <Footer />
           </>
         ) : cartStep ? (
           <>
@@ -719,7 +714,7 @@ export function HomePage() {
                 <OrderCompletedView onGoHome={handleGoHome} />
               )}
             </main>
-            <Footer onOpenCategories={openCategories} />
+            <Footer />
             <AddAddressRequiredModal
               isOpen={isAddAddressModalOpen}
               onClose={() => setIsAddAddressModalOpen(false)}
@@ -773,7 +768,7 @@ export function HomePage() {
                 onProductSelect={handleWishlistProductSelect}
               />
             </main>
-            <Footer onOpenCategories={openCategories} />
+            <Footer />
           </>
         ) : categoryListing ? (
           <>
@@ -785,7 +780,7 @@ export function HomePage() {
                 onSeeAllProducts={handleOpenAllCategories}
               />
             </main>
-            <Footer onOpenCategories={openCategories} />
+            <Footer />
           </>
         ) : searchOpen ? (
           <>
@@ -797,7 +792,7 @@ export function HomePage() {
                 onSeeAllProducts={handleOpenAllCategories}
               />
             </main>
-            <Footer onOpenCategories={openCategories} />
+            <Footer />
           </>
         ) : (
           <HomePlacementsProvider>

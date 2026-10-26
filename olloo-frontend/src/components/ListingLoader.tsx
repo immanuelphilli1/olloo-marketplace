@@ -17,7 +17,7 @@ export function ListingLoader({ label = 'Loading products' }: ListingLoaderProps
       aria-label={label}
       className="flex min-h-48 items-center justify-center py-10"
     >
-      <LoaderLineIcon className="size-8 animate-spin text-primary-orange" aria-hidden />
+      <LoaderLineIcon className="size-8 animate-spin text-brand" aria-hidden />
     </div>
   )
 }

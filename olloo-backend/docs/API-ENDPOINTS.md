@@ -11,6 +11,7 @@ Quick reference. See [API.md](./API.md) for full specification.
 | Method | Path |
 |--------|------|
 | `POST` | `/auth/check-email` |
+| `POST` | `/auth/check-phone` |
 | `POST` | `/auth/login` |
 | `POST` | `/auth/register` |
 | `GET` | `/auth/oauth/:provider/url` |

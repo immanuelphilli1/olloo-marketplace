@@ -117,6 +117,38 @@ final class ShopperCurrencyTest extends TestCase
             ->assertJsonPath('currency.code', 'USD');
     }
 
+    public function test_a_configured_fallback_country_places_unplaceable_shoppers_there(): void
+    {
+        config(['currency.fallback_country' => 'gh']);
+
+        // Nothing else places this shopper, so the configured market wins over
+        // the default currency's country, and its fresh rate prices them in GHS.
+        $this->getJson('/api/v1/locale')
+            ->assertOk()
+            ->assertJsonPath('country.code', 'GH')
+            ->assertJsonPath('countrySource', 'default')
+            ->assertJsonPath('currency.code', 'GHS');
+
+        // An explicit request still beats the fallback.
+        $this->getJson('/api/v1/locale?country=US')
+            ->assertOk()
+            ->assertJsonPath('currency.code', 'USD');
+    }
+
+    public function test_an_unknown_fallback_country_logs_and_uses_the_default_currencys_country(): void
+    {
+        Log::spy();
+        config(['currency.fallback_country' => 'ZZ']);
+
+        $this->getJson('/api/v1/locale')
+            ->assertOk()
+            ->assertJsonPath('country.code', 'US')
+            ->assertJsonPath('currency.code', 'USD');
+
+        Log::shouldHaveReceived('warning')
+            ->withArgs(fn (string $message): bool => str_contains($message, 'SHOPPER_FALLBACK_COUNTRY'));
+    }
+
     public function test_the_default_country_is_the_default_currencys_own_country(): void
     {
         // The whole point of currencies.country_code: USD belongs to the US, not

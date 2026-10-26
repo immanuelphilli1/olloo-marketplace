@@ -175,7 +175,7 @@ export function mapApiProduct(product: ApiProductCard): Product {
     categoryId: product.categoryId as SidebarCategoryId,
     subcategory: product.subcategory,
     image: resolveAssetUrl(product.image),
-    tag: product.tag,
+    tag: product.tag ?? product.tags?.[0] ?? '',
     category: product.category,
     name: product.name,
     price,
@@ -183,6 +183,9 @@ export function mapApiProduct(product: ApiProductCard): Product {
     discount: formatDiscountPercent(product.discountPercent) || product.discount || undefined,
     delivery: formatDeliveryQuote(product.deliveryQuote) || product.delivery,
     rating: ratingValue ? String(ratingValue) : product.rating,
+    reviewCount: product.reviewCount,
+    soldCount: product.soldCount,
+    discountPercent: product.discountPercent ?? undefined,
     liked: product.liked ?? undefined,
     showAddButton: product.showAddButton,
     priceOrange: product.priceOrange,
@@ -253,7 +256,7 @@ const orderStatusBadgeLabels: Record<OrderStatus, string> = {
   // The server's documented wording for an order awaiting payment.
   pending_payment: 'Awaiting payment',
   processing: 'Processing Order',
-  shipped: 'Order Shipped',
+  shipped: 'Order Dispatched',
   delivered: 'Delivered on time',
   cancelled: 'Order cancelled',
 }
@@ -281,7 +284,7 @@ function getOrderStatusLabel(status: OrderStatus): string {
     case 'processing':
       return 'Processing'
     case 'shipped':
-      return 'Shipped'
+      return 'Dispatched'
     case 'delivered':
       return 'Delivered'
     case 'cancelled':
@@ -373,7 +376,9 @@ export function mapApiProductDetail(
   const priceMoney =
     defaultVariant != null
       ? {
-          amount: Number.parseFloat(defaultVariant.priceAmount),
+          // `priceAmount` is display-formatted ("2,093.42"); parseFloat alone
+          // stops at the comma and read every price over 1,000 as 1 or 2.
+          amount: Number.parseFloat(defaultVariant.priceAmount.replace(/,/g, '')),
           currency: defaultVariant.priceCurrency,
         }
       : response.priceMoney ?? response.product.priceMoney
@@ -402,7 +407,9 @@ export function mapApiProductDetail(
       values: group.values,
     })) ?? []
 
-  const shippingFee = formatAmount(response.shippingFeeMoney ?? response.priceMoney)
+  // No fee means no destination to quote, not a fee equal to the price.
+  const deliveryFeeMoney = response.shippingFeeMoney ?? null
+  const shippingFee = deliveryFeeMoney ? formatAmount(deliveryFeeMoney) : ''
   const deliveryEstimate =
     defaultVariant?.delivery || formatDeliveryDays(response.deliveryDays)
 
@@ -420,11 +427,21 @@ export function mapApiProductDetail(
     modelOptions: response.modelOptions ?? variants.map((variant) => variant.name),
     descriptionLines: response.descriptionLines ?? [],
     reviews: [],
-    shippingAddress: {
-      line1: 'Hse 8 M Street',
-      line2: 'Accra Ghana',
-    },
     shippingFee,
+    deliveryFeeMoney,
+    family:
+      response.family && response.family.options.length > 1
+        ? {
+            optionName: response.family.optionName,
+            options: response.family.options.map((option) => ({
+              rid: option.rid,
+              value: option.value,
+              price: formatAmount(option.priceMoney),
+              inStock: option.inStock,
+              isCurrent: option.isCurrent,
+            })),
+          }
+        : null,
     deliveryEstimate,
     itemsTotal: `${priceCurrency} ${priceAmount}`,
     subtotal: `${priceCurrency} ${priceAmount}`,
@@ -532,6 +549,8 @@ export function buildSelectionForProduct(
 
 export function mapApiProductReview(review: ApiProductReview): ProductReview {
   return {
+    rid: review.rid,
+    title: review.title ?? undefined,
     author: review.author,
     location: review.location,
     // `createdAt` is ISO; the review card wants a readable short date. The
@@ -587,10 +606,11 @@ export function mapApiAddress(address: ApiAddress): AddressRecord {
   const lastName = address.lastName ?? ''
   const city = address.city ?? ''
   const region = address.region ?? ''
-  const countryCode = address.country ?? ''
-  // The card shows a country name; `country` keeps the raw code, which is what
-  // the catalog needs as `?country=`.
-  const country = getCountryDisplayName(countryCode)
+  // The API sends the display name as `country` and the ISO code separately.
+  // `country` on the record must be the code: it is the catalog's `?country=`,
+  // and passing the name meant signed-in shoppers never got delivery quotes.
+  const countryCode = address.countryCode ?? address.country ?? ''
+  const country = address.country && address.countryCode ? address.country : getCountryDisplayName(countryCode)
 
   // The API only guarantees the individual parts, but the cards read a single
   // "city line", so compose one and fall back to whatever is available.

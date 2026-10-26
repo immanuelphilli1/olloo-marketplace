@@ -118,7 +118,7 @@ export default function Show({ category, canCreate, canEdit, canDelete, canCreat
                     {canCreate && (
                         <Link
                             href={route('admin.categories.create', { parent: category.rid })}
-                            className="flex cursor-pointer items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
+                            className="flex cursor-pointer items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
                         >
                             <FaPlus size={12} /> Add subcategory
                         </Link>

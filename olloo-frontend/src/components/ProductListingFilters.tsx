@@ -96,7 +96,7 @@ function FilterSection({
             type="button"
             onClick={onClear}
             aria-label={`Clear ${title} filter`}
-            className="shrink-0 cursor-pointer text-sm font-medium leading-4 tracking-[-0.28px] text-primary-orange"
+            className="shrink-0 cursor-pointer text-sm font-medium leading-4 tracking-[-0.28px] text-brand"
           >
             Clear
           </button>
@@ -134,10 +134,10 @@ function FilterRadioOption({
     >
       <span
         className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 ${
-          isSelected ? 'border-primary-orange' : 'border-border-secondary'
+          isSelected ? 'border-brand' : 'border-border-secondary'
         }`}
       >
-        {isSelected ? <span className="size-2.5 rounded-full bg-primary-orange" /> : null}
+        {isSelected ? <span className="size-2.5 rounded-full bg-brand" /> : null}
       </span>
       {trailing ?? (
         <span
@@ -208,7 +208,7 @@ function PriceRangeSlider({
         <div className={`relative h-6 ${isMobile ? 'w-58 max-w-full' : 'w-full'}`}>
           <div className="absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-bg-tertiary" />
           <div
-            className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-primary-orange"
+            className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand"
             style={{ left: `${minPercent}%`, width: `${maxPercent - minPercent}%` }}
           />
           {/* Two stacked range inputs drive the track: the lower one owns the
@@ -224,7 +224,7 @@ function PriceRangeSlider({
             value={minPrice}
             onChange={(event) => handleMinChange(Number(event.target.value))}
             aria-label="Minimum price"
-            className="pointer-events-none absolute inset-0 z-20 size-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:size-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-4 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-primary-orange [&::-webkit-slider-thumb]:shadow-[0px_1px_4px_0px_rgba(0,0,0,0.04),0px_4px_12px_0px_rgba(0,0,0,0.06)] [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:size-5 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-4 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-primary-orange"
+            className="pointer-events-none absolute inset-0 z-20 size-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:size-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-4 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-brand [&::-webkit-slider-thumb]:shadow-[0px_1px_4px_0px_rgba(0,0,0,0.04),0px_4px_12px_0px_rgba(0,0,0,0.06)] [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:size-5 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-4 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-brand"
           />
           <input
             type="range"
@@ -234,7 +234,7 @@ function PriceRangeSlider({
             value={displayedMax}
             onChange={(event) => handleMaxChange(Number(event.target.value))}
             aria-label="Maximum price"
-            className="pointer-events-none absolute inset-0 size-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:size-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-4 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-primary-orange [&::-webkit-slider-thumb]:shadow-[0px_1px_4px_0px_rgba(0,0,0,0.04),0px_4px_12px_0px_rgba(0,0,0,0.06)] [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:size-5 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-4 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-primary-orange"
+            className="pointer-events-none absolute inset-0 size-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:size-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-4 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-brand [&::-webkit-slider-thumb]:shadow-[0px_1px_4px_0px_rgba(0,0,0,0.04),0px_4px_12px_0px_rgba(0,0,0,0.06)] [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:size-5 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-4 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-brand"
           />
         </div>
       </div>
@@ -303,7 +303,6 @@ function ListingFiltersContent({
   // can never throw on .length.
   const deliveryOptions = facets.deliveryOptions ?? []
   const screenSizeOptions = facets.screenSizes ?? []
-  const colorOptions = facets.colors ?? []
   const brandOptions = facets.brands ?? []
 
   // Each section only offers Clear once it actually deviates from the default,
@@ -468,33 +467,11 @@ function ListingFiltersContent({
         </FilterSection>
       ) : null}
 
-      {colorOptions.length > 0 ? (
-        <FilterSection
-          title="Color"
-          isOpen={openSections.color}
-          onToggle={() => onToggleSection('color')}
-          onClear={
-            filters.color ? () => onFiltersChange({ ...filters, color: '' }) : undefined
-          }
-          variant={variant}
-        >
-          {colorOptions.map((label) => (
-            <FilterRadioOption
-              key={label}
-              label={label}
-              isSelected={filters.color === label}
-              onSelect={() => onFiltersChange({ ...filters, color: filters.color === label ? '' : label })}
-              variant={variant}
-            />
-          ))}
-        </FilterSection>
-      ) : null}
-
       {(isMobile ? mobileCollapsedFilterSections : collapsedFilterSections).map((title) => {
         const key = title.toLowerCase() as keyof OpenSections
-        // Brand and Color are rendered above from live facets, so they are
-        // filtered out here to avoid rendering the same section twice.
-        if (key === 'brand' || key === 'color') {
+        // Brand is rendered above from live facets, so it is filtered out here
+        // to avoid rendering the same section twice.
+        if (key === 'brand') {
           return null
         }
 
@@ -651,7 +628,7 @@ export function MobileFiltersSheet({
           <button
             type="button"
             onClick={onSave}
-            className="btn-orange flex h-13 w-full cursor-pointer items-center justify-center rounded-full px-6 py-4"
+            className="btn-brand flex h-13 w-full cursor-pointer items-center justify-center rounded-full px-6 py-4"
           >
             <span className="text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse">
               Save
@@ -702,14 +679,14 @@ export function MobileListingHeader({
       <button
         type="button"
         onClick={onOpenFilters}
-        className="group flex h-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-bg-secondary px-4 transition-colors hover:bg-orange-light active:bg-orange-light"
+        className="group flex h-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-bg-secondary px-4 transition-colors hover:bg-brand-light active:bg-brand-light"
         aria-label="Open filters"
       >
         <FilterLineIcon
-          className="size-5 text-text-secondary transition-colors group-hover:text-primary-orange"
+          className="size-5 text-text-secondary transition-colors group-hover:text-brand"
           aria-hidden
         />
-        <span className="text-sm font-medium leading-4 tracking-[-0.28px] text-text-secondary transition-colors group-hover:text-primary-orange">
+        <span className="text-sm font-medium leading-4 tracking-[-0.28px] text-text-secondary transition-colors group-hover:text-brand">
           Filter
         </span>
       </button>

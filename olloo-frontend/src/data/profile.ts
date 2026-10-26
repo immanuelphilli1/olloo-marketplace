@@ -49,7 +49,7 @@ export const privacyNotice =
 export const accountProtectionTitle = 'Your account is protected'
 
 export const accountProtectionDescription =
-  'Your H&CO account is protected by advanced security. Keeping this information up-to-date safeguards your account even more.'
+  'Your olloo account is protected by advanced security. Keeping this information up-to-date safeguards your account even more.'
 
 export function getProfileInitials(fullName: string): string {
   const parts = fullName.trim().split(/\s+/).filter(Boolean)

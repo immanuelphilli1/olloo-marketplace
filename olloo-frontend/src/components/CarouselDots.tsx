@@ -31,7 +31,7 @@ export function CarouselDots({
           // behind a transparent header without the indicators competing with it.
           className={`rounded-full transition-[width,background-color] duration-300 ${
             index === activeIndex
-              ? 'h-2 w-8 bg-primary-orange'
+              ? 'h-2 w-8 bg-brand'
               : 'size-2 bg-bg-tertiary hover:bg-border-secondary'
           } ${muted ? 'opacity-30 lg:opacity-100' : ''}`}
         />

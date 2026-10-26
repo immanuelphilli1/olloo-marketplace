@@ -71,7 +71,7 @@ function PaymentDefaultToggle({
     >
       <span
         className={`flex size-8 shrink-0 items-center justify-center rounded-full border-2 ${
-          isDefault ? 'border-text-primary bg-text-primary' : 'border-border-secondary bg-bg-primary'
+          isDefault ? 'border-brand bg-brand' : 'border-border-secondary bg-bg-primary'
         }`}
         aria-hidden
       >
@@ -259,7 +259,7 @@ export function PaymentMethodsPanel() {
         {errorMessage ? (
           <p
             role="alert"
-            className="rounded-xl bg-orange-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-primary-orange"
+            className="rounded-xl bg-brand-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-brand"
           >
             {errorMessage}
           </p>

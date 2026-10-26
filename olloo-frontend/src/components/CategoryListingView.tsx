@@ -108,7 +108,7 @@ function ListingEmptyState({
             <button
               type="button"
               onClick={onClearFilters}
-              className="cursor-pointer font-medium text-text-primary underline underline-offset-2 hover:text-primary-orange"
+              className="cursor-pointer font-medium text-text-primary underline underline-offset-2 hover:text-brand"
             >
               Clear filters
             </button>
@@ -122,7 +122,7 @@ function ListingEmptyState({
           <button
             type="button"
             onClick={onSeeAllProducts}
-            className="cursor-pointer font-medium text-text-primary underline underline-offset-2 hover:text-primary-orange"
+            className="cursor-pointer font-medium text-text-primary underline underline-offset-2 hover:text-brand"
           >
             See all products
           </button>
@@ -274,7 +274,7 @@ export function CategoryListingView({
   useEffect(() => {
     const titleLabel =
       activeCategory !== ALL_PRODUCTS_LABEL ? activeCategory : selection.categoryLabel
-    document.title = `${titleLabel} | H&CO.`
+    document.title = `${titleLabel} | olloo`
   }, [activeCategory, selection.categoryLabel])
 
   return (

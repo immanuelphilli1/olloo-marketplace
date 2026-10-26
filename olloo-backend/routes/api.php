@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::prefix('auth')->name('auth.')->group(function (): void {
         Route::post('check-email', [AuthController::class, 'checkEmail'])->name('check-email');
+        Route::post('check-phone', [AuthController::class, 'checkPhone'])->name('check-phone');
         Route::post('login', [AuthController::class, 'login'])->name('login');
         Route::post('register', [AuthController::class, 'register'])->name('register');
         Route::get('oauth/{provider}/url', [AuthController::class, 'oauthUrl'])->name('oauth.url');

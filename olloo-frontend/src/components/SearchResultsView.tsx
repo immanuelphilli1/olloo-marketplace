@@ -132,7 +132,7 @@ export function SearchResultsView({
                     <button
                       type="button"
                       onClick={onSeeAllProducts}
-                      className="mt-2 cursor-pointer text-sm font-medium tracking-[-0.28px] text-primary-orange"
+                      className="mt-2 cursor-pointer text-sm font-medium tracking-[-0.28px] text-brand"
                     >
                       See all products
                     </button>

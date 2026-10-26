@@ -78,7 +78,6 @@ export function GoogleOAuthCallbackPage() {
     handleSubcategorySelect,
     isCategoriesOpen,
     toggleCategories,
-    toggleCategoriesFromLinkBar,
   } = useCategoryNavigation()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -184,7 +183,7 @@ export function GoogleOAuthCallbackPage() {
               </p>
               <Link
                 to={getHomePath()}
-                className="btn-orange flex h-13 items-center justify-center rounded-full px-8 text-base font-medium tracking-[-0.32px] text-text-inverse"
+                className="btn-brand flex h-13 items-center justify-center rounded-full px-8 text-base font-medium tracking-[-0.32px] text-text-inverse"
               >
                 Back to home
               </Link>
@@ -193,7 +192,7 @@ export function GoogleOAuthCallbackPage() {
             <ListingLoader label="Signing you in" />
           )}
         </main>
-        <Footer onOpenCategories={toggleCategoriesFromLinkBar} />
+        <Footer />
       </div>
     </>
   )

@@ -268,7 +268,7 @@ function SecurityActionDialog({
           {errorMessage ? (
             <p
               role="alert"
-              className="rounded-xl bg-orange-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-primary-orange"
+              className="rounded-xl bg-brand-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-brand"
             >
               {errorMessage}
             </p>
@@ -356,7 +356,7 @@ function SecurityActionDialog({
             type="button"
             onClick={() => void handleSubmit()}
             disabled={!isSubmittable || isSaving}
-            className="btn-orange flex h-13 w-fit cursor-pointer items-center justify-center rounded-full px-6 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-brand flex h-13 w-fit cursor-pointer items-center justify-center rounded-full px-6 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSaving ? 'Saving…' : copy.submitLabel}
           </button>

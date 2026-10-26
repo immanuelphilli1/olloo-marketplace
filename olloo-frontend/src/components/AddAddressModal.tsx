@@ -206,7 +206,7 @@ function DefaultAddressToggle({
     >
       <span
         className={`flex size-8 shrink-0 items-center justify-center rounded-full border-2 ${
-          selected ? 'border-text-primary bg-text-primary' : 'border-border-secondary bg-bg-primary'
+          selected ? 'border-brand bg-brand' : 'border-border-secondary bg-bg-primary'
         }`}
         aria-hidden
       >
@@ -590,7 +590,7 @@ export function AddAddressModal({
               <button
                 type="button"
                 onClick={handleSubmit}
-                className="btn-orange flex h-13 cursor-pointer items-center justify-center rounded-full px-6 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
+                className="btn-brand flex h-13 cursor-pointer items-center justify-center rounded-full px-6 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
               >
                 {submitLabel}
               </button>

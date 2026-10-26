@@ -1,10 +1,10 @@
 export const termsOfUseMeta = {
-  title: 'H&CO. Terms of Use',
+  title: 'olloo Terms of Use',
   lastUpdated: 'September 30, 2026',
 } as const
 
 export const termsOfUseIntro = [
-  'These Terms of Use govern your access to and use of the H&CO. website, online store, products, and services.',
+  'These Terms of Use govern your access to and use of the olloo website, online store, products, and services.',
   'By creating an account, browsing our catalogue, or placing an order, you agree to these terms. If you do not agree, please do not use the site.',
 ] as const
 
@@ -17,7 +17,7 @@ export const termsOfUseBlocks: TermsOfUseBlock[] = [
   { type: 'heading', text: '1. Acceptance of Terms' },
   {
     type: 'paragraph',
-    text: 'By accessing or using H&CO., you confirm that you have read, understood, and agree to be bound by these Terms of Use, our Privacy Policy, and any other policies referenced here. If you do not agree with any part of these terms, you must not use the site.',
+    text: 'By accessing or using olloo, you confirm that you have read, understood, and agree to be bound by these Terms of Use, our Privacy Policy, and any other policies referenced here. If you do not agree with any part of these terms, you must not use the site.',
   },
   {
     type: 'paragraph',
@@ -31,7 +31,7 @@ export const termsOfUseBlocks: TermsOfUseBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'You may not use H&CO. if you are barred from doing so by applicable law, or if your use would infringe the rights of another person.',
+    text: 'You may not use olloo if you are barred from doing so by applicable law, or if your use would infringe the rights of another person.',
   },
 
   { type: 'heading', text: '3. Account Registration' },
@@ -99,7 +99,7 @@ export const termsOfUseBlocks: TermsOfUseBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'Our full delivery terms are set out in our Shipping & Delivery Policy, which forms part of these Terms of Use.',
+    text: 'Our full delivery terms are set out in our Delivery Policy, which forms part of these Terms of Use.',
   },
 
   { type: 'heading', text: '8. Returns and Refunds' },
@@ -115,7 +115,7 @@ export const termsOfUseBlocks: TermsOfUseBlock[] = [
   { type: 'heading', text: '9. Intellectual Property' },
   {
     type: 'paragraph',
-    text: 'All content on this site, including text, images, graphics, logos, and product designs, is owned by H&CO. or its licensors and is protected by intellectual property laws.',
+    text: 'All content on this site, including text, images, graphics, logos, and product designs, is owned by olloo or its licensors and is protected by intellectual property laws.',
   },
   {
     type: 'paragraph',
@@ -144,7 +144,7 @@ export const termsOfUseBlocks: TermsOfUseBlock[] = [
   { type: 'heading', text: '12. Limitation of Liability' },
   {
     type: 'paragraph',
-    text: 'To the maximum extent permitted by law, H&CO. is not liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the site or any purchase made through it.',
+    text: 'To the maximum extent permitted by law, olloo is not liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the site or any purchase made through it.',
   },
   {
     type: 'paragraph',
@@ -154,7 +154,7 @@ export const termsOfUseBlocks: TermsOfUseBlock[] = [
   { type: 'heading', text: '13. Indemnity' },
   {
     type: 'paragraph',
-    text: 'You agree to indemnify and hold H&CO. harmless against any claim, damage, loss, or expense (including reasonable legal fees) arising from your use of the site, your breach of these terms, or your infringement of any third-party right.',
+    text: 'You agree to indemnify and hold olloo harmless against any claim, damage, loss, or expense (including reasonable legal fees) arising from your use of the site, your breach of these terms, or your infringement of any third-party right.',
   },
 
   { type: 'heading', text: '14. Changes to These Terms' },

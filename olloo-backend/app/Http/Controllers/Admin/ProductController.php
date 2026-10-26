@@ -154,6 +154,7 @@ class ProductController extends Controller
             'is_featured' => $validated['is_featured'],
             'is_new_arrival' => $validated['is_new_arrival'],
             'currency_code' => Currency::defaultCode(),
+            ...$this->familyAttributes($validated),
         ]);
 
         $product->syncTagsInOrder($this->tagIdsFor($validated['tags'] ?? null));
@@ -207,6 +208,7 @@ class ProductController extends Controller
             'is_active' => $validated['is_active'],
             'is_featured' => $validated['is_featured'],
             'is_new_arrival' => $validated['is_new_arrival'],
+            ...$this->familyAttributes($validated),
         ]);
 
         $product->syncTagsInOrder($this->tagIdsFor($validated['tags'] ?? null));
@@ -282,7 +284,13 @@ class ProductController extends Controller
             'variants.*.stock_quantity' => ['nullable', 'required_if_accepted:variants.*.track_stock', 'integer', 'min:0'],
             'variants.*.is_default' => ['required', 'boolean'],
             'variants.*.handling_days' => ['nullable', 'integer', 'min:0', 'max:365'],
+            // Product family: separate products shown as options of each other.
+            'family_key' => ['nullable', 'string', 'max:120'],
+            'family_option_name' => ['nullable', 'required_with:family_key', 'string', 'max:40'],
+            'family_option_value' => ['nullable', 'required_with:family_key', 'string', 'max:60'],
         ], [
+            'family_option_name.required_with' => 'Name the option shoppers choose, such as Size or Capacity.',
+            'family_option_value.required_with' => 'Enter this product\'s option, such as 43 inch or 7 kg.',
             'slug.unique' => 'Another product already uses this slug. Change it so the storefront link is unique.',
             'category_rid.required' => 'Pick the category shoppers should find this product in.',
             'category_rid.exists' => 'That category no longer exists. Pick another one.',
@@ -306,6 +314,7 @@ class ProductController extends Controller
         ]);
 
         $this->assertAttributesFitCategory($validated);
+        $validated = $this->normalizedFamily($validated, $product);
 
         $variants = $validated['variants'];
         if (count(array_filter($variants, fn (array $variant): bool => (bool) $variant['is_default'])) !== 1) {
@@ -589,9 +598,77 @@ class ProductController extends Controller
     /**
      * @return array<string, mixed>
      */
+    /**
+     * Normalises the family fields and refuses a second product with the same
+     * option in one family, which would put two identical choices side by side.
+     *
+     * The key is slugged ("TCL P635 TV" -> "tcl-p635-tv") so a typo in case or
+     * spacing still links the products.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function normalizedFamily(array $validated, ?Product $product): array
+    {
+        $key = Str::slug((string) ($validated['family_key'] ?? ''));
+
+        if ($key === '') {
+            return [...$validated, 'family_key' => null, 'family_option_name' => null, 'family_option_value' => null];
+        }
+
+        $value = trim((string) $validated['family_option_value']);
+        $clash = Product::query()
+            ->where('family_key', $key)
+            ->when($product, fn ($query) => $query->where('id', '!=', $product->id))
+            ->whereRaw('LOWER(family_option_value) = ?', [Str::lower($value)])
+            ->value('name');
+
+        if ($clash !== null) {
+            throw ValidationException::withMessages([
+                'family_option_value' => "\"{$clash}\" already uses {$value} in this family. Give each product its own option.",
+            ]);
+        }
+
+        return [
+            ...$validated,
+            'family_key' => $key,
+            'family_option_name' => trim((string) $validated['family_option_name']),
+            'family_option_value' => $value,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array{family_key: ?string, family_option_name: ?string, family_option_value: ?string}
+     */
+    private function familyAttributes(array $validated): array
+    {
+        return [
+            'family_key' => $validated['family_key'] ?? null,
+            'family_option_name' => $validated['family_option_name'] ?? null,
+            'family_option_value' => $validated['family_option_value'] ?? null,
+        ];
+    }
+
     private function serializeProduct(Product $product): array
     {
         return [
+            'familyKey' => $product->family_key,
+            'familyOptionName' => $product->family_option_name,
+            'familyOptionValue' => $product->family_option_value,
+            // The other products this one is linked to, so staff can see the
+            // family they are editing.
+            'familyMembers' => $product->family_key === null ? [] : Product::query()
+                ->where('family_key', $product->family_key)
+                ->where('id', '!=', $product->id)
+                ->orderBy('family_option_value')
+                ->get(['rid', 'name', 'family_option_value', 'is_active'])
+                ->map(fn (Product $member) => [
+                    'rid' => $member->rid,
+                    'name' => $member->name,
+                    'optionValue' => $member->family_option_value,
+                    'isActive' => (bool) $member->is_active,
+                ])->values()->all(),
             'rid' => $product->rid,
             'name' => $product->name,
             'slug' => $product->slug,

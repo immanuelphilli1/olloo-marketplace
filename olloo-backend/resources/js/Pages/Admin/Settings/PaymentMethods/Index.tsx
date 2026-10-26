@@ -169,7 +169,7 @@ export default function Index({ methods, providers, currencies, countryOptions }
                         <button
                             type="submit"
                             disabled={create.processing}
-                            className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             {create.processing ? 'Adding…' : 'Add method'}
                         </button>
@@ -404,7 +404,7 @@ function EditRow({
                         <button
                             type="submit"
                             disabled={form.processing}
-                            className="cursor-pointer rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="cursor-pointer rounded-md bg-brand px-3 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             Save
                         </button>
@@ -464,7 +464,7 @@ function CurrencyRow({ row, providers }: { row: CurrencyRow; providers: string[]
                     type="button"
                     disabled={form.processing || (form.data.provider === row.provider && form.data.is_default === row.isDefault)}
                     onClick={save}
-                    className="cursor-pointer rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="cursor-pointer rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     Save
                 </button>

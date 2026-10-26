@@ -4,8 +4,8 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 
 // The brand, not APP_NAME: the image build has no VITE_APP_NAME, so the old
-// fallback put "HandCO" in every admin tab.
-const ADMIN_TITLE = 'H&CO. Admin';
+// fallback put the framework name in every admin tab.
+const ADMIN_TITLE = 'olloo Admin';
 
 createInertiaApp({
     title: (title) => (title ? `${title} · ${ADMIN_TITLE}` : ADMIN_TITLE),
@@ -15,7 +15,7 @@ createInertiaApp({
         createRoot(el).render(<App {...props} />);
     },
     progress: {
-        color: '#0f172a',
+        color: '#5b2be0',
         showSpinner: true,
     },
 });

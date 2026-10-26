@@ -1,13 +1,13 @@
 import type { PrivacyPolicyBlock } from './privacyPolicy'
 
 export const intellectualPropertyMeta = {
-  title: 'H&CO. Intellectual Property',
+  title: 'olloo Intellectual Property',
   lastUpdated: 'August 27, 2026',
 } as const
 
 export const intellectualPropertyIntro = [
   'Respecting Creativity. Protecting Ownership.',
-  'At H&CO., we respect the intellectual property rights of brands, creators, businesses, and individuals. We are committed to operating a marketplace where products, content, and brand assets are used lawfully and responsibly.',
+  'At olloo, we respect the intellectual property rights of brands, creators, businesses, and individuals. We are committed to operating a marketplace where products, content, and brand assets are used lawfully and responsibly.',
 ] as const
 
 export const intellectualPropertyBlocks: PrivacyPolicyBlock[] = [
@@ -17,7 +17,7 @@ export const intellectualPropertyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'H&CO. expects all users of our website and services to respect applicable intellectual property laws. We do not knowingly permit the sale or promotion of products that infringe the trademarks, copyrights, patents, or other proprietary rights of third parties.',
+    text: 'olloo expects all users of our website and services to respect applicable intellectual property laws. We do not knowingly permit the sale or promotion of products that infringe the trademarks, copyrights, patents, or other proprietary rights of third parties.',
   },
   {
     type: 'paragraph',
@@ -29,7 +29,7 @@ export const intellectualPropertyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'The H&CO. name, logo, branding elements, website design, and related materials are protected intellectual property. They may not be copied, modified, distributed, or used without our prior written permission, except as permitted by applicable law.',
+    text: 'The olloo name, logo, branding elements, website design, and related materials are protected intellectual property. They may not be copied, modified, distributed, or used without our prior written permission, except as permitted by applicable law.',
   },
   {
     type: 'paragraph',
@@ -41,7 +41,7 @@ export const intellectualPropertyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'All content on the H&CO. website—including text, images, graphics, product descriptions, layouts, and digital materials—is protected by copyright and other intellectual property laws unless otherwise stated.',
+    text: 'All content on the olloo website—including text, images, graphics, product descriptions, layouts, and digital materials—is protected by copyright and other intellectual property laws unless otherwise stated.',
   },
   {
     type: 'paragraph',
@@ -53,7 +53,7 @@ export const intellectualPropertyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'Products offered through H&CO. should be genuine and lawfully sourced. Listings must not use unauthorised images, copied descriptions, misleading branding, or materials that infringe another party’s intellectual property rights.',
+    text: 'Products offered through olloo should be genuine and lawfully sourced. Listings must not use unauthorised images, copied descriptions, misleading branding, or materials that infringe another party’s intellectual property rights.',
   },
   {
     type: 'paragraph',
@@ -65,7 +65,7 @@ export const intellectualPropertyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'If you believe that content or a product on H&CO. infringes your intellectual property rights, please contact us with sufficient information to help us review the matter, including:',
+    text: 'If you believe that content or a product on olloo infringes your intellectual property rights, please contact us with sufficient information to help us review the matter, including:',
   },
   {
     type: 'bullets',
@@ -87,7 +87,7 @@ export const intellectualPropertyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'H&CO. does not support the sale of counterfeit, replica, or otherwise unauthorised products that mislead customers or infringe brand rights.',
+    text: 'olloo does not support the sale of counterfeit, replica, or otherwise unauthorised products that mislead customers or infringe brand rights.',
   },
   {
     type: 'paragraph',
@@ -99,7 +99,7 @@ export const intellectualPropertyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'Depending on the circumstances, H&CO. may:',
+    text: 'Depending on the circumstances, olloo may:',
   },
   {
     type: 'bullets',
@@ -125,7 +125,7 @@ export const intellectualPropertyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'H&CO.',
+    text: 'olloo',
   },
   {
     type: 'paragraph',
@@ -149,6 +149,6 @@ export const intellectualPropertyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'Thank you for helping us protect creativity, ownership, and confidence in every purchase on H&CO.',
+    text: 'Thank you for helping us protect creativity, ownership, and confidence in every purchase on olloo.',
   },
 ]

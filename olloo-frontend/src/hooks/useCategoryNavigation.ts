@@ -17,8 +17,10 @@ type UseCategoryNavigationOptions = {
 }
 
 /**
- * Category modal state and handlers, shared by every page so the Categories
- * button, the link bar and the modal behave identically everywhere.
+ * Mega-menu state and handlers, shared by every page so the All categories
+ * button, the mobile Categories tab and the menu behave identically everywhere.
+ * Category links elsewhere (link bar, homepage tiles, footer) navigate directly
+ * and do not go through this state.
  */
 export function useCategoryNavigation(options?: UseCategoryNavigationOptions) {
   const { scrollOnNavigate = false, routeCategoryId } = options ?? {}
@@ -26,10 +28,6 @@ export function useCategoryNavigation(options?: UseCategoryNavigationOptions) {
   const { categories } = useCatalog()
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false)
   const [categoriesTargetId, setCategoriesTargetId] = useState<string>('featured')
-  // Whether the current open was triggered by a deliberate category pick (the
-  // link bar) rather than the generic Categories button / mobile tab. Only a
-  // deliberate pick should jump straight to that category on mobile.
-  const [openToInitialCategory, setOpenToInitialCategory] = useState(false)
 
   // The link bar highlights the major category, so a grouped member id (e.g.
   // "accessories" under "Fashion & Accessories") lights up its parent entry.
@@ -37,36 +35,14 @@ export function useCategoryNavigation(options?: UseCategoryNavigationOptions) {
 
   const openCategories = useCallback((categoryId: string = 'featured') => {
     setCategoriesTargetId(categoryId)
-    setOpenToInitialCategory(true)
     setIsCategoriesOpen(true)
   }, [])
-
-  // Link bar entries toggle: clicking the category already showing closes the
-  // modal, so the panel can be dismissed without hunting for the Categories
-  // button. Compared on the major category so that, for example,
-  // "Fashion & Accessories" also closes a panel opened for Accessories.
-  const toggleCategoriesFromLinkBar = useCallback(
-    (categoryId: string = 'featured') => {
-      setIsCategoriesOpen((open) => {
-        if (open && getMajorCategoryId(categoriesTargetId) === getMajorCategoryId(categoryId)) {
-          return false
-        }
-
-        setCategoriesTargetId(categoryId)
-        setOpenToInitialCategory(true)
-        return true
-      })
-    },
-    [categoriesTargetId],
-  )
 
   const toggleCategories = useCallback(() => {
     setIsCategoriesOpen((open) => {
       if (open) return false
+      // Opens on the department being browsed, or the last one shown.
       setCategoriesTargetId(activeCategoryId)
-      // Generic entry point: on mobile, show the category list rather than
-      // reopening whichever category happened to be active last.
-      setOpenToInitialCategory(false)
       return true
     })
   }, [activeCategoryId])
@@ -93,8 +69,6 @@ export function useCategoryNavigation(options?: UseCategoryNavigationOptions) {
     handleSubcategorySelect,
     isCategoriesOpen,
     openCategories,
-    openToInitialCategory,
     toggleCategories,
-    toggleCategoriesFromLinkBar,
   }
 }

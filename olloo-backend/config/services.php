@@ -66,8 +66,8 @@ return [
         // container. Home, category and product pages are served from it with
         // their meta tags filled in, so crawlers and link previews need no JS.
         'index_path' => (string) env('STOREFRONT_INDEX_PATH', '/var/www/html/web/current/index.html'),
-        'site_name' => (string) env('STOREFRONT_SITE_NAME', 'H&CO.'),
-        'description' => (string) env('STOREFRONT_DESCRIPTION', 'Shop curated everyday essentials at H&CO., delivered to your door.'),
+        'site_name' => (string) env('STOREFRONT_SITE_NAME', 'olloo'),
+        'description' => (string) env('STOREFRONT_DESCRIPTION', 'Shop electronics, fashion, home and more on olloo, with secure checkout and tracked delivery.'),
     ],
 
     'slack' => [

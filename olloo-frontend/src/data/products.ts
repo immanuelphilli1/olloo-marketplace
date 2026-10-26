@@ -20,6 +20,10 @@ export type Product = {
   discount?: string
   delivery: string
   rating: string
+  reviewCount?: number
+  soldCount?: number
+  /** Numeric discount, e.g. `18` for 18% off; used to rank deals. */
+  discountPercent?: number
   liked?: boolean
   showAddButton?: boolean
   priceOrange?: boolean

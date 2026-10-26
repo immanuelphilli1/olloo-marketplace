@@ -145,7 +145,7 @@ export function EditProfileModal({ isOpen, fullName, onClose, onSubmit }: EditPr
           <button
             type="button"
             onClick={handleSubmit}
-            className="btn-orange flex h-13 w-fit cursor-pointer items-center justify-center rounded-full px-6 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
+            className="btn-brand flex h-13 w-fit cursor-pointer items-center justify-center rounded-full px-6 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
           >
             Update Profile
           </button>

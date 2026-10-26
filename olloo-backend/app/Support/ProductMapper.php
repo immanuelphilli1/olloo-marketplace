@@ -50,7 +50,7 @@ final class ProductMapper
             // Worked out from shipping for the shopper's destination; null when
             // the destination is unknown or no shipping rule applies.
             'deliveryQuote' => self::deliveryQuote($product),
-            'ratingValue' => round((float) $product->rating, 2),
+            'ratingValue' => self::displayRating($product),
             'reviewCount' => (int) $product->review_count,
             'soldCount' => (int) $product->sold_count,
             'liked' => $liked,
@@ -100,7 +100,7 @@ final class ProductMapper
             'images' => $images,
             'imageUrls' => $imageUrls,
             'gallery' => $gallery,
-            'ratingValue' => (float) $product->rating,
+            'ratingValue' => self::displayRating($product),
             'reviewCount' => $product->review_count,
             'soldCount' => $product->sold_count,
             'priceMoney' => self::price($product, (int) $product->price_minor),
@@ -223,6 +223,17 @@ final class ProductMapper
             'minDays' => $quote['deliveryDays']['min'],
             'maxDays' => $quote['deliveryDays']['max'],
         ];
+    }
+
+    /**
+     * Stars shown for a product: the approved-review average, or five while it
+     * has no reviews yet. The stored `rating` stays the true average (0 with no
+     * reviews), so sorting by rating still ranks reviewed products by merit;
+     * `reviewCount` is sent alongside so a client can say "no reviews yet".
+     */
+    public static function displayRating(Product $product): float
+    {
+        return (int) $product->review_count > 0 ? round((float) $product->rating, 2) : 5.0;
     }
 
     public static function reviewToArray(Review $review): array

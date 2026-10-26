@@ -14,13 +14,11 @@ import {
 export function ShippingDeliveryPolicyPage() {
   const navigate = useNavigate()
   const {
-    activeCategoryId,
     categoriesTargetId,
     closeCategories,
     handleSubcategorySelect,
     isCategoriesOpen,
     toggleCategories,
-    toggleCategoriesFromLinkBar,
   } = useCategoryNavigation()
 
   const handleOpenCart = useCallback(() => {
@@ -44,8 +42,6 @@ export function ShippingDeliveryPolicyPage() {
         onCloseCategories={closeCategories}
         onSubcategorySelect={handleSubcategorySelect}
         showCategoryLinksBar
-        onOpenCategories={toggleCategoriesFromLinkBar}
-        activeCategoryId={activeCategoryId}
         onOpenCart={handleOpenCart}
         onOpenWishlist={handleOpenWishlist}
         onAfterSignOut={handleGoHome}
@@ -53,7 +49,7 @@ export function ShippingDeliveryPolicyPage() {
       />
       <div className="mx-auto w-full min-w-0 max-w-360 overflow-x-clip bg-bg-primary">
         <ShippingDeliveryPolicyPageContent onGoHome={handleGoHome} />
-        <Footer onOpenCategories={toggleCategoriesFromLinkBar} />
+        <Footer />
       </div>
       <BackToTopButton />
     </>

@@ -26,6 +26,8 @@
         <env name="CACHE_STORE" value="array"/>
         <!-- Gateway returns bounce here, so it has to be absolute in tests too. -->
         <env name="WEB_CLIENT_URL" value="http://localhost:5173"/>
+        <!-- Tests assert the default-currency fallback; a local .env market must not leak in. -->
+        <env name="SHOPPER_FALLBACK_COUNTRY" value=""/>
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="DB_URL" value=""/>

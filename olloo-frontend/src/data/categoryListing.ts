@@ -17,9 +17,9 @@ export function getAllCategoriesListingSelection(
   return buildAllCategoriesListingSelection(apiCategories)
 }
 
-export const collapsedFilterSections = ['Brand', 'Color', 'Seller']
+export const collapsedFilterSections = ['Brand']
 
-export const mobileCollapsedFilterSections = ['Color', 'Connectivity', 'Storage']
+export const mobileCollapsedFilterSections = ['Connectivity', 'Storage']
 
 export type ListingFilters = {
   minPrice: number
@@ -143,9 +143,9 @@ export function applyListingFilters(
       return false
     }
 
-    if (filters.delivery && product.delivery !== filters.delivery) {
-      return false
-    }
+    // Delivery is filtered by the API (`freeDelivery` / `maxDeliveryDays`), so
+    // it is not checked again here: the option labels ("Within 5 days") never
+    // equal a product's delivery text, which emptied every filtered listing.
 
     if (filters.brand && product.brand !== filters.brand) {
       return false

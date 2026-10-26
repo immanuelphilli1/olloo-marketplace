@@ -1,56 +1,34 @@
 import { useMemo } from 'react'
-import StarLineIcon from 'remixicon-react/StarLineIcon'
+import { Link, useLocation } from 'react-router-dom'
 import { useCatalog } from '../context/CatalogContext'
 import { getCategoryNodeId } from '../data/catalogCategories'
 import { getCategoryNavIcon, linkBarFixedIcons } from '../data/categoryNavIcons'
-import type { SidebarCategoryId } from '../data/categoriesModal'
-import { Icon } from './Icon'
+import { getCategoryPath } from '../data/shopRoutes'
 import { images } from '../assets/images'
+import { Icon } from './Icon'
 
 type CategoryLink = {
-  id: SidebarCategoryId | string
+  id: string
   label: string
   icon?: ReturnType<typeof getCategoryNavIcon>
   imageIcon?: string
 }
 
-const featuredLink: CategoryLink = {
-  id: 'featured',
-  label: 'Featured',
-  icon: StarLineIcon,
-}
-
 type CategoryLinksBarProps = {
-  onOpenCategories: (categoryId: SidebarCategoryId | string, label: string) => void
-  activeCategoryId?: SidebarCategoryId | string
-  isCategoriesOpen?: boolean
+  /** Closes the mega menu when a link is followed, so it never covers the new page. */
+  onNavigate?: () => void
 }
 
-function CategoryLinkIcon({
-  category,
-  isActive,
-}: {
-  category: CategoryLink
-  isActive: boolean
-}) {
-  const iconClassName = `size-6 shrink-0 transition-colors ${
-    isActive ? 'text-primary-orange' : 'text-text-secondary group-hover:text-primary-orange'
-  }`
-
-  if (category.imageIcon) {
-    return <Icon src={category.imageIcon} className={iconClassName} />
-  }
-
-  const CategoryIcon = category.icon ?? getCategoryNavIcon(category.id)
-  return <CategoryIcon className={iconClassName} aria-hidden />
-}
-
-export function CategoryLinksBar({
-  onOpenCategories,
-  activeCategoryId = 'featured',
-  isCategoriesOpen = false,
-}: CategoryLinksBarProps) {
+/**
+ * Department shortcuts under the header. Each one is a real link to its
+ * listing; browsing every department at once is the mega menu's job.
+ */
+export function CategoryLinksBar({ onNavigate }: CategoryLinksBarProps) {
   const { categories: apiCategories } = useCatalog()
+  const { pathname } = useLocation()
+  // `/categories/electronics-headphones-audio` belongs to `electronics`, so
+  // subcategory pages keep their department highlighted.
+  const routeSegment = pathname.startsWith('/categories/') ? pathname.split('/')[2] : null
 
   const categoryLinks = useMemo((): CategoryLink[] => {
     const fixed: CategoryLink[] = [
@@ -71,39 +49,53 @@ export function CategoryLinksBar({
     return [...fixed, ...fromApi]
   }, [apiCategories])
 
-  const visibleLinks = isCategoriesOpen ? [featuredLink, ...categoryLinks] : categoryLinks
-
   return (
-    <section className="hidden border-b border-border-primary bg-bg-primary px-4 lg:block lg:px-14">
-      <div className="py-2 max-w-380 mx-auto">
-        <div className="flex gap-2 overflow-x-auto [-ms-overflow-style:none] scrollbar-none [&::-webkit-scrollbar]:hidden">
-          {visibleLinks.map((category) => {
-            const isActive = isCategoriesOpen && category.id === activeCategoryId
+    <nav
+      aria-label="Departments"
+      className="hidden border-b border-border-primary bg-bg-primary px-4 lg:px-14"
+    >
+      <div className="mx-auto max-w-388 py-1.5">
+        <ul className="flex gap-1 overflow-x-auto scrollbar-none mask-[linear-gradient(to_right,black_92%,transparent)]">
+          {categoryLinks.map((category) => {
+            const isActive =
+              routeSegment !== null &&
+              (routeSegment === category.id || routeSegment.startsWith(`${category.id}-`))
+            const CategoryIcon = category.icon ?? getCategoryNavIcon(category.id)
+            const iconClassName = `size-5 shrink-0 transition-colors ${
+              isActive ? 'text-brand' : 'text-text-secondary group-hover:text-brand'
+            }`
 
             return (
-              <button
-                key={`${category.id}-${category.label}`}
-                type="button"
-                onClick={() => onOpenCategories(category.id, category.label)}
-                className={`group flex h-12 shrink-0 cursor-pointer items-center gap-2 rounded-lg p-4 transition-colors ${
-                  isActive ? 'bg-orange-light' : 'hover:bg-orange-light'
-                }`}
-              >
-                <CategoryLinkIcon category={category} isActive={isActive} />
-                <span
-                  className={`whitespace-nowrap text-base font-medium tracking-[-0.32px] transition-colors ${
-                    isActive
-                      ? 'text-primary-orange'
-                      : 'text-text-secondary group-hover:text-primary-orange'
+              <li key={category.id} className="shrink-0">
+                <Link
+                  to={getCategoryPath(category.id)}
+                  onClick={() => {
+                    onNavigate?.()
+                    window.scrollTo({ top: 0 })
+                  }}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`group flex h-10 items-center gap-2 rounded-full px-3.5 transition-colors ${
+                    isActive ? 'bg-brand-light' : 'hover:bg-bg-secondary'
                   }`}
                 >
-                  {category.label}
-                </span>
-              </button>
+                  {category.imageIcon ? (
+                    <Icon src={category.imageIcon} className={iconClassName} />
+                  ) : (
+                    <CategoryIcon className={iconClassName} aria-hidden />
+                  )}
+                  <span
+                    className={`whitespace-nowrap text-sm font-semibold transition-colors ${
+                      isActive ? 'text-brand' : 'text-text-secondary group-hover:text-text-primary'
+                    }`}
+                  >
+                    {category.label}
+                  </span>
+                </Link>
+              </li>
             )
           })}
-        </div>
+        </ul>
       </div>
-    </section>
+    </nav>
   )
 }

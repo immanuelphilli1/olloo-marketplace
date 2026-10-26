@@ -42,7 +42,7 @@ export const checkoutLegalCopy =
   'By submitting your order, you agree to our Terms of Use and Privacy Policy.'
 
 export const securePaymentsCopy =
-  'Every payment you make on H&CO is secured with strict SSL encryption and PCI DSS data protection protocols'
+  'Every payment you make on olloo is secured with strict SSL encryption and PCI DSS data protection protocols'
 
 export const securePrivacyCopy =
   'Protecting your privacy is important to us! Please be assured that your information will be kept secured and uncompromised. We do not sell your personal information for money and will only use your information in accordance with our privacy and cookie policy to provide and improve our services to you.'

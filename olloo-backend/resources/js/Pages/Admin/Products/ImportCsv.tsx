@@ -123,7 +123,7 @@ export default function ImportCsv({ columns, maxRows }: Props) {
                             type="button"
                             disabled={!form.data.csv || form.processing}
                             onClick={submit}
-                            className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             {form.processing ? 'Reading the file…' : 'Preview my file'}
                         </button>

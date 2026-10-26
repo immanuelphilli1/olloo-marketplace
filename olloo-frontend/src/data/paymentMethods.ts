@@ -25,13 +25,13 @@ export type PaymentMethodFormValues = {
 
 export const paymentSafeguardNotice = 'All data is safeguarded'
 
-export const paymentSecurityTitle = 'H&CO protects your card information'
+export const paymentSecurityTitle = 'olloo protects your card information'
 
 export const paymentSecurityBullets = [
-  'H&CO follows the Payment Card Industry Data Security Standard (PCI DSS) when handling card data',
+  'olloo follows the Payment Card Industry Data Security Standard (PCI DSS) when handling card data',
   'Card information is secure and uncompromised',
   'All data is safeguarded',
-  'H&CO never sells your card information',
+  'olloo never sells your card information',
 ]
 
 export const emptyPaymentMethodForm: PaymentMethodFormValues = {

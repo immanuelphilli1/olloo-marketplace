@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\OrderItem;
 use App\Models\Review;
 use App\Support\ProductMapper;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,10 +23,7 @@ final class ReviewController extends Controller
 
         $items = OrderItem::query()
             ->whereDoesntHave('review')
-            ->whereHas('order', function ($query) use ($user): void {
-                $query->where('user_id', $user->id)
-                    ->where('status', OrderStatus::Delivered);
-            })
+            ->whereHas('order', fn ($query) => $this->boughtBy($query, $user->id))
             ->with(['order', 'product.category.parent', 'product.tags', 'product.attributeValues.definition', 'product.defaultVariant'])
             ->orderByDesc('id')
             ->get()
@@ -98,10 +97,7 @@ final class ReviewController extends Controller
         $orderItem = OrderItem::query()
             ->where('rid', $data['reviewId'])
             ->whereDoesntHave('review')
-            ->whereHas('order', function ($query) use ($user): void {
-                $query->where('user_id', $user->id)
-                    ->where('status', OrderStatus::Delivered);
-            })
+            ->whereHas('order', fn ($query) => $this->boughtBy($query, $user->id))
             ->with(['order', 'product'])
             ->first();
 
@@ -136,5 +132,17 @@ final class ReviewController extends Controller
         }
 
         return response()->json($payload, 201);
+    }
+
+    /**
+     * Orders whose items the shopper may review: theirs, paid for, and not
+     * cancelled. Bought is enough; staff do not have to mark the order
+     * delivered first. Refunded orders are excluded by the payment status.
+     */
+    private function boughtBy(Builder $orders, int $userId): Builder
+    {
+        return $orders->where('user_id', $userId)
+            ->where('payment_status', OrderPaymentStatus::Paid)
+            ->where('status', '!=', OrderStatus::Cancelled);
     }
 }

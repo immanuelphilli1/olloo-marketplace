@@ -175,7 +175,7 @@ export default function ImportCsvPreview({ token, filename, rows, summary, match
                         type="button"
                         onClick={() => setFilter(value)}
                         className={`cursor-pointer rounded-full px-3 py-1 text-sm ${
-                            filter === value ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                            filter === value ? 'bg-brand text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                         }`}
                     >
                         {label}
@@ -273,7 +273,7 @@ export default function ImportCsvPreview({ token, filename, rows, summary, match
                     type="button"
                     disabled={submitting || importable === 0 || unanswered.length > 0}
                     onClick={apply}
-                    className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     {submitting
                         ? 'Queueing…'

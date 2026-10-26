@@ -167,7 +167,7 @@ function ReturnRefundDialog({
             <button
               type="button"
               onClick={handleClose}
-              className="btn-orange mt-2 flex h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
+              className="btn-brand mt-2 flex h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
             >
               Done
             </button>
@@ -208,7 +208,7 @@ function ReturnRefundDialog({
                       value={option}
                       checked={reason === option}
                       onChange={() => setReason(option)}
-                      className="size-4 accent-primary-orange"
+                      className="size-4 accent-brand"
                     />
                     <span className="text-sm font-medium leading-4 tracking-[-0.28px] text-text-primary">
                       {option}
@@ -220,7 +220,7 @@ function ReturnRefundDialog({
                   {error ? (
                     <p
                       role="alert"
-                      className="rounded-xl bg-orange-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-primary-orange"
+                      className="rounded-xl bg-brand-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-brand"
                     >
                       {error}
                     </p>
@@ -234,7 +234,7 @@ function ReturnRefundDialog({
                 type="button"
                 onClick={() => void handleSubmit()}
                 disabled={isIneligible || !reason || isSubmitting}
-                className="btn-orange flex h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-60"
+                className="btn-brand flex h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? 'Submitting…' : refundCopy.submitLabel}
               </button>

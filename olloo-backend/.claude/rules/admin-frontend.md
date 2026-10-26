@@ -6,7 +6,7 @@ paths:
 
 # Admin frontend
 
-No shared UI kit: pages use inline Tailwind (slate palette, `rounded-md border-slate-300` inputs, `bg-slate-900` primary). Shared pieces live in `@/Components` (`Pagination`, `TagsInput`, `CategoryTree`, `CategoryTreePicker`, `TagMultiSelect`). Form building blocks (`FormSection`, `Field`, `ErrorSummary`, `Switch`, `ImagePreview`, `Badge`, `focusFirstError`, `useUnsavedChangesWarning`, `slugify`) live in `@/Components/Form`; use them for new create/edit forms. Links via `useRoute()` from `@/utils/route` with named `admin.*` routes.
+No shared UI kit: pages use inline Tailwind (slate palette, `rounded-md border-slate-300` inputs, `bg-brand` olloo-violet primary with `hover:bg-brand-dark`). Shared pieces live in `@/Components` (`Pagination`, `TagsInput`, `CategoryTree`, `CategoryTreePicker`, `TagMultiSelect`). Form building blocks (`FormSection`, `Field`, `ErrorSummary`, `Switch`, `ImagePreview`, `Badge`, `focusFirstError`, `useUnsavedChangesWarning`, `slugify`) live in `@/Components/Form`; use them for new create/edit forms. Links via `useRoute()` from `@/utils/route` with named `admin.*` routes.
 
 ## Clickables
 - Anything clickable (`button`, `Link` styled as button, `onClick`/`role="button"`, chips, tabs, toggle rows, `select`, checkbox labels) gets `cursor-pointer`; disabled gets `disabled:cursor-not-allowed`. Hover color alone is not enough.

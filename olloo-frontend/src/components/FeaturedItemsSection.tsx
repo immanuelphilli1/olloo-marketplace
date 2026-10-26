@@ -2,6 +2,7 @@ import type { Product } from '../data/products'
 import { getProductPath } from '../data/shopRoutes'
 import { useCatalog } from '../context/CatalogContext'
 import { ProductCard } from './ProductCard'
+import { SectionHeading } from './SectionHeading'
 
 type FeaturedItemsSectionProps = {
   onProductSelect?: (product: Product) => void
@@ -11,13 +12,11 @@ export function FeaturedItemsSection({ onProductSelect }: FeaturedItemsSectionPr
   const { featuredProducts, isReady } = useCatalog()
 
   return (
-    <section className="border-b border-border-primary px-4 lg:px-16">
-      <div className="flex flex-col gap-4 pt-6 pb-4 lg:py-6">
-        <h2 className="text-base font-medium leading-6 tracking-[-0.32px] text-text-primary lg:text-2xl lg:leading-10 lg:tracking-[-0.64px]">
-          Featured items
-        </h2>
+    <section className="px-4 lg:px-16">
+      <div className="flex flex-col gap-4 lg:gap-5">
+        <SectionHeading title="Featured for you" subtitle="Hand picked by the olloo team" />
         {isReady && featuredProducts.length > 0 ? (
-        <div className="grid grid-cols-2 items-stretch gap-2 lg:grid-cols-5">
+        <div className="grid grid-cols-2 items-stretch gap-2.5 sm:grid-cols-3 lg:grid-cols-4 lg:gap-3 xl:grid-cols-6">
           {featuredProducts.map((product, index) => (
             <ProductCard
               key={`${product.id}-${index}`}

@@ -258,7 +258,7 @@ export default function AdminLayout({
                                         onClick={() => setSidebarOpen(false)}
                                         className={`flex cursor-pointer items-center rounded-md px-2 py-2 text-sm font-medium ${
                                             isActive(item.href)
-                                                ? 'bg-slate-900 text-white'
+                                                ? 'bg-brand text-white'
                                                 : 'text-slate-600 hover:bg-slate-50'
                                         }`}
                                     >
@@ -293,7 +293,7 @@ export default function AdminLayout({
                     </div>
                     <div className="flex flex-col px-4 pt-4">
                         <div className="flex items-center gap-2.5">
-                            <img src="/images/brand/hcomall-logo.svg" alt="H&CO." className="h-9 w-9" />
+                            <img src="/images/brand/olloo-mark.svg" alt="olloo" className="h-9 w-9" />
                             <div className="text-lg font-semibold tracking-tight text-slate-500">Admin</div>
                         </div>
                         <div className="mt-3 flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2">
@@ -314,7 +314,7 @@ export default function AdminLayout({
                 <div className="flex min-h-0 flex-1 flex-col overflow-y-auto border-r border-slate-200 bg-white">
                     <div className="flex flex-col px-4 pt-4">
                         <div className="flex items-center gap-2.5">
-                            <img src="/images/brand/hcomall-logo.svg" alt="H&CO." className="h-9 w-9" />
+                            <img src="/images/brand/olloo-mark.svg" alt="olloo" className="h-9 w-9" />
                             <div className="text-lg font-semibold tracking-tight text-slate-500">Admin</div>
                         </div>
                         <div className="mt-3 flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2">
@@ -340,7 +340,7 @@ export default function AdminLayout({
                     >
                         <FaBars className="h-5 w-5" />
                     </button>
-                    <img src="/images/brand/hcomall-logo.svg" alt="" className="hidden h-7 w-7 sm:block lg:hidden" />
+                    <img src="/images/brand/olloo-mark.svg" alt="" className="hidden h-7 w-7 sm:block lg:hidden" />
                     <div className="flex-1 text-sm font-medium text-slate-700">{title ?? 'Admin'}</div>
                     {routeExists('admin.notifications.index') && (
                         <Link

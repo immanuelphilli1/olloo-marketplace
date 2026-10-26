@@ -72,7 +72,7 @@ export default function Index({ countries, filters, lastSyncedAt, syncConfigured
                             type="button"
                             onClick={sync}
                             disabled={syncing || !syncConfigured}
-                            className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             <FaSync className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
                             {syncing ? 'Queuing…' : 'Sync countries'}

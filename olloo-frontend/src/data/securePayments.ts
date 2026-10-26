@@ -1,13 +1,13 @@
 import type { PrivacyPolicyBlock } from './privacyPolicy'
 
 export const securePaymentsMeta = {
-  title: 'H&CO. Secure Payments',
+  title: 'olloo Secure Payments',
   lastUpdated: 'August 27, 2026',
 } as const
 
 export const securePaymentsIntro = [
   'Security You Can Trust. Confidence in Every Transaction.',
-  'At H&CO., we believe a premium shopping experience begins with trust. We are committed to maintaining a secure payment environment designed to protect your transaction information and provide confidence at every stage of your purchase.',
+  'At olloo, we believe a premium shopping experience begins with trust. We are committed to maintaining a secure payment environment designed to protect your transaction information and provide confidence at every stage of your purchase.',
 ] as const
 
 export const securePaymentsBlocks: PrivacyPolicyBlock[] = [
@@ -17,7 +17,7 @@ export const securePaymentsBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'H&CO. works with trusted payment processing technologies and service providers to facilitate secure transactions. Payment information is transmitted through protected connections and processed in accordance with applicable security standards and the requirements of our payment partners.',
+    text: 'olloo works with trusted payment processing technologies and service providers to facilitate secure transactions. Payment information is transmitted through protected connections and processed in accordance with applicable security standards and the requirements of our payment partners.',
   },
   {
     type: 'heading',
@@ -37,7 +37,7 @@ export const securePaymentsBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'Depending on your location and availability, H&CO. may support a range of payment options, including:',
+    text: 'Depending on your location and availability, olloo may support a range of payment options, including:',
   },
   {
     type: 'bullets',
@@ -70,7 +70,7 @@ export const securePaymentsBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'H&CO. respects the confidentiality of your information. We do not sell your payment information for marketing purposes. Information may be shared with authorised service providers where necessary to process payments, fulfil orders, prevent fraud, provide customer support, or comply with applicable legal obligations.',
+    text: 'olloo respects the confidentiality of your information. We do not sell your payment information for marketing purposes. Information may be shared with authorised service providers where necessary to process payments, fulfil orders, prevent fraud, provide customer support, or comply with applicable legal obligations.',
   },
   {
     type: 'paragraph',
@@ -82,10 +82,10 @@ export const securePaymentsBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'From product discovery to checkout and order completion, H&CO. is committed to creating a secure, transparent, and dependable marketplace experience.',
+    text: 'From product discovery to checkout and order completion, olloo is committed to creating a secure, transparent, and dependable marketplace experience.',
   },
   {
     type: 'paragraph',
-    text: 'Shop with confidence. Discover smarter shopping with H&CO.',
+    text: 'Shop with confidence. Discover smarter shopping with olloo.',
   },
 ]

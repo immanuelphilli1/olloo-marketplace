@@ -3,6 +3,7 @@ import { getAccountPath } from './data/accountRoutes'
 import { AuthProvider } from './context/AuthContext'
 import { CatalogProvider } from './context/CatalogContext'
 import { ShopProvider } from './context/ShopContext'
+import { CartToast } from './components/CartToast'
 import { ScrollToTop } from './components/ScrollToTop'
 import { RequireAuth } from './components/RequireAuth'
 import { AboutPage } from './pages/AboutPage'
@@ -62,6 +63,8 @@ function App() {
         <ShopProvider>
           <ScrollToTop />
           <AppRoutes />
+          {/* One add-to-cart notice for every page. */}
+          <CartToast />
         </ShopProvider>
         </CatalogProvider>
       </AuthProvider>

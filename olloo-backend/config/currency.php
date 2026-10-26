@@ -16,6 +16,14 @@ return [
     */
     'default_markup_percent' => (float) env('CURRENCY_DEFAULT_MARKUP_PERCENT', 0),
 
+    /*
+    | ISO code of the market a shopper lands in when nothing places them (no
+    | ?country=, no stored country, no usable IP: localhost, VPNs, a blank
+    | IPINFO_TOKEN). Blank keeps the default currency's own country. A
+    | Ghana-first store sets GH so unplaced visitors see GHS, not USD.
+    */
+    'fallback_country' => env('SHOPPER_FALLBACK_COUNTRY') ?: null,
+
     'geoip' => [
         // Country per IP is cached, so each visitor IP costs one lookup per TTL.
         'hit_ttl_hours' => (int) env('GEOIP_HIT_TTL_HOURS', 24),

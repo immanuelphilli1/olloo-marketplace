@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import ArrowRightSLineIcon from 'remixicon-react/ArrowRightSLineIcon'
 import CheckLineIcon from 'remixicon-react/CheckLineIcon'
 import CloseFillIcon from 'remixicon-react/CloseFillIcon'
+import CloseLineIcon from 'remixicon-react/CloseLineIcon'
 import {
   buildOrderTimeline,
   type OrderLine,
@@ -303,7 +304,7 @@ export function OrderTrackingModal({ order, events, isLoading, onClose }: OrderT
                       </p>
                     </div>
                     <ArrowRightSLineIcon
-                      className="size-5 shrink-0 text-text-secondary transition-colors group-hover:text-primary-orange"
+                      className="size-5 shrink-0 text-text-secondary transition-colors group-hover:text-brand"
                       aria-hidden
                     />
                   </button>
@@ -320,6 +321,14 @@ export function OrderTrackingModal({ order, events, isLoading, onClose }: OrderT
 
 /** Dot and connector styling for one timeline step. */
 function StageMarker({ state }: { state: OrderStageState }) {
+  if (state === 'cancelled') {
+    return (
+      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-red">
+        <CloseLineIcon className="size-4 text-text-inverse" aria-hidden />
+      </span>
+    )
+  }
+
   if (state === 'done') {
     return (
       <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-green">
@@ -332,7 +341,7 @@ function StageMarker({ state }: { state: OrderStageState }) {
     return (
       <span
         aria-hidden
-        className="size-6 shrink-0 rounded-full border-2 border-primary-orange bg-bg-primary"
+        className="size-6 shrink-0 rounded-full border-2 border-brand bg-bg-primary"
       />
     )
   }
@@ -349,8 +358,9 @@ function StageMarker({ state }: { state: OrderStageState }) {
  * Vertical delivery timeline.
  *
  * Every stage is shown, oldest first: completed steps carry a green tick and
- * their API date, the stage the order is currently on is ringed in orange, and
- * steps still to come are muted and undated. Text is dimmed for anything not yet
+ * their API date, the stage the order is currently on is ringed in the brand colour, and
+ * steps still to come are muted and undated. A cancelled order marks every
+ * stage red, and its first stage says Cancelled instead of In progress. Text is dimmed for anything not yet
  * reached so the journey reads as unfinished rather than missing.
  */
 function TimelineList({ steps }: { steps: OrderTimelineStep[] }) {
@@ -362,6 +372,9 @@ function TimelineList({ steps }: { steps: OrderTimelineStep[] }) {
         const occurredOn = formatEventDate(step.occurredAt)
         const isDone = step.state === 'done'
         const isActive = step.state === 'active'
+        const isCancelled = step.state === 'cancelled'
+        // Not reached, or stopped by the cancellation: only the cancelled stage reads at full strength.
+        const isMuted = step.state === 'upcoming' || (isCancelled && index > 0)
         // The connector below a step is filled only once that step is behind us.
         const connectorFilled = index < lastIndex && step.state === 'done'
 
@@ -372,7 +385,9 @@ function TimelineList({ steps }: { steps: OrderTimelineStep[] }) {
               {index < lastIndex ? (
                 <span
                   aria-hidden
-                  className={`w-0.5 flex-1 ${connectorFilled ? 'bg-primary-green' : 'bg-border-secondary'}`}
+                  className={`w-0.5 flex-1 ${
+                    isCancelled ? 'bg-primary-red' : connectorFilled ? 'bg-primary-green' : 'bg-border-secondary'
+                  }`}
                 />
               ) : null}
             </div>
@@ -380,19 +395,24 @@ function TimelineList({ steps }: { steps: OrderTimelineStep[] }) {
             <div className={index === lastIndex ? '' : 'pb-6'}>
               <p
                 className={`flex flex-wrap items-center gap-2 text-sm font-medium leading-4 tracking-[-0.28px] ${
-                  step.state === 'upcoming' ? 'text-text-tertiary' : 'text-text-primary'
+                  isMuted ? 'text-text-tertiary' : 'text-text-primary'
                 }`}
               >
                 {step.label}
                 {isActive ? (
-                  <span className="rounded bg-orange-light px-1 py-0.5 text-xs font-medium leading-4 tracking-[-0.24px] text-primary-orange">
+                  <span className="rounded bg-brand-light px-1 py-0.5 text-xs font-medium leading-4 tracking-[-0.24px] text-brand">
                     In progress
+                  </span>
+                ) : null}
+                {isCancelled && index === 0 ? (
+                  <span className="rounded bg-red-light px-1 py-0.5 text-xs font-semibold leading-4 tracking-[-0.24px] text-primary-red">
+                    Cancelled
                   </span>
                 ) : null}
               </p>
               <p
                 className={`mt-1 text-sm leading-4.5 tracking-[-0.28px] ${
-                  step.state === 'upcoming' ? 'text-text-tertiary' : 'text-text-secondary'
+                  isMuted ? 'text-text-tertiary' : 'text-text-secondary'
                 }`}
               >
                 {step.description}
@@ -403,7 +423,7 @@ function TimelineList({ steps }: { steps: OrderTimelineStep[] }) {
                 </p>
               ) : null}
               <span className="sr-only">
-                {isDone ? 'Completed' : isActive ? 'Current stage' : 'Not yet reached'}
+                {isCancelled ? 'Cancelled' : isDone ? 'Completed' : isActive ? 'Current stage' : 'Not yet reached'}
               </span>
             </div>
           </li>

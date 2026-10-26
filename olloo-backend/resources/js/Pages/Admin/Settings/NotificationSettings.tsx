@@ -77,7 +77,7 @@ export default function NotificationSettings({ settings }: Props) {
                         onChange={(next) => setData('payment', { emails: next.join(', ') })}
                         validateTag={isValidEmail}
                         errors={errors['payment.emails'] ? [errors['payment.emails']] : []}
-                        placeholder="finance@handco.test"
+                        placeholder="finance@example.com"
                     />
                 </Section>
 
@@ -91,14 +91,14 @@ export default function NotificationSettings({ settings }: Props) {
                         onChange={(next) => setData('inquiry', { emails: next.join(', ') })}
                         validateTag={isValidEmail}
                         errors={errors['inquiry.emails'] ? [errors['inquiry.emails']] : []}
-                        placeholder="support@handco.test"
+                        placeholder="support@example.com"
                     />
                 </Section>
 
                 <button
                     type="submit"
                     disabled={processing}
-                    className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60"
+                    className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm text-white disabled:opacity-60"
                 >
                     {processing ? 'Saving…' : 'Save recipients'}
                 </button>

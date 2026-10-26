@@ -1,12 +1,12 @@
 import type { PrivacyPolicyBlock } from './privacyPolicy'
 
 export const returnRefundPolicyMeta = {
-  title: 'H&CO. Return & Refund Policy',
+  title: 'olloo Return & Refund Policy',
   lastUpdated: 'August 27, 2026',
 } as const
 
 export const returnRefundPolicyIntro = [
-  'At H&CO., we want you to be satisfied with your purchase. If you are not completely satisfied with an eligible product, we aim to make the return and refund process simple and transparent.',
+  'At olloo, we want you to be satisfied with your purchase. If you are not completely satisfied with an eligible product, we aim to make the return and refund process simple and transparent.',
   'This Return & Refund Policy explains when products can be returned, how refunds are processed, and what customers should expect when requesting a return.',
 ] as const
 
@@ -68,7 +68,7 @@ export const returnRefundPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'If you receive a product that is damaged, defective, incomplete, or different from what you ordered, please contact H&CO. as soon as reasonably possible.',
+    text: 'If you receive a product that is damaged, defective, incomplete, or different from what you ordered, please contact olloo as soon as reasonably possible.',
   },
   {
     type: 'paragraph',
@@ -85,7 +85,7 @@ export const returnRefundPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'Depending on the circumstances, H&CO. may offer a replacement, repair, refund, partial refund, or another appropriate solution.',
+    text: 'Depending on the circumstances, olloo may offer a replacement, repair, refund, partial refund, or another appropriate solution.',
   },
   {
     type: 'heading',
@@ -101,7 +101,7 @@ export const returnRefundPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'Contact H&CO. through our official customer service channel and provide your order number and reason for the return.',
+    text: 'Contact olloo through our official customer service channel and provide your order number and reason for the return.',
   },
   {
     type: 'paragraph',
@@ -125,7 +125,7 @@ export const returnRefundPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'Return the product using the shipping method or carrier specified by H&CO., where applicable.',
+    text: 'Return the product using the delivery method or carrier specified by olloo, where applicable.',
   },
   {
     type: 'paragraph',
@@ -137,23 +137,23 @@ export const returnRefundPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'heading',
-    text: '5. Return Shipping Costs',
+    text: '5. Return Delivery Costs',
   },
   {
     type: 'paragraph',
-    text: 'Return shipping responsibility may depend on the reason for the return.',
+    text: 'Return delivery responsibility may depend on the reason for the return.',
   },
   {
     type: 'paragraph',
-    text: 'Where the product is defective, damaged upon arrival, incorrect, or otherwise subject to a remedy under applicable law, H&CO. may cover reasonable return shipping costs.',
+    text: 'Where the product is defective, damaged upon arrival, incorrect, or otherwise subject to a remedy under applicable law, olloo may cover reasonable return delivery costs.',
   },
   {
     type: 'paragraph',
-    text: 'For voluntary returns, customers may be responsible for return shipping costs unless otherwise stated at the time of purchase.',
+    text: 'For voluntary returns, customers may be responsible for return delivery costs unless otherwise stated at the time of purchase.',
   },
   {
     type: 'paragraph',
-    text: 'Shipping fees may be non-refundable for certain voluntary returns, subject to applicable law.',
+    text: 'Delivery fees may be non-refundable for certain voluntary returns, subject to applicable law.',
   },
   {
     type: 'heading',
@@ -161,7 +161,7 @@ export const returnRefundPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'Once an eligible return has been received and approved, H&CO. will initiate the applicable refund.',
+    text: 'Once an eligible return has been received and approved, olloo will initiate the applicable refund.',
   },
   {
     type: 'paragraph',
@@ -177,7 +177,7 @@ export const returnRefundPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'In certain circumstances, H&CO. may issue a partial refund where appropriate, including when:',
+    text: 'In certain circumstances, olloo may issue a partial refund where appropriate, including when:',
   },
   {
     type: 'bullets',
@@ -202,11 +202,11 @@ export const returnRefundPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'Exchanges may be subject to product availability. If the requested replacement is unavailable, H&CO. may offer a refund or another appropriate solution.',
+    text: 'Exchanges may be subject to product availability. If the requested replacement is unavailable, olloo may offer a refund or another appropriate solution.',
   },
   {
     type: 'paragraph',
-    text: 'For defective or incorrect products, H&CO. will determine the appropriate resolution in accordance with applicable law.',
+    text: 'For defective or incorrect products, olloo will determine the appropriate resolution in accordance with applicable law.',
   },
   {
     type: 'heading',
@@ -214,11 +214,11 @@ export const returnRefundPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'If you wish to cancel an order, contact H&CO. as soon as possible.',
+    text: 'If you wish to cancel an order, contact olloo as soon as possible.',
   },
   {
     type: 'paragraph',
-    text: 'We will attempt to cancel the order before it is processed or shipped. Once an order has been dispatched, cancellation may no longer be possible and the customer may need to follow the applicable return procedure.',
+    text: 'We will attempt to cancel the order before it is processed or dispatched. Once an order has been dispatched, cancellation may no longer be possible and the customer may need to follow the applicable return procedure.',
   },
   {
     type: 'paragraph',
@@ -254,11 +254,11 @@ export const returnRefundPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'If your order has not arrived within the expected delivery period, please contact H&CO. so we can investigate with the relevant delivery provider.',
+    text: 'If your order has not arrived within the expected delivery period, please contact olloo so we can investigate with the relevant delivery provider.',
   },
   {
     type: 'paragraph',
-    text: 'Where an order is confirmed as lost, undelivered, or otherwise eligible for a remedy, H&CO. may provide a replacement or refund in accordance with applicable law and the circumstances of the order.',
+    text: 'Where an order is confirmed as lost, undelivered, or otherwise eligible for a remedy, olloo may provide a replacement or refund in accordance with applicable law and the circumstances of the order.',
   },
   {
     type: 'heading',
@@ -266,7 +266,7 @@ export const returnRefundPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'H&CO. reserves the right to investigate unusual, fraudulent, or abusive return activity.',
+    text: 'olloo reserves the right to investigate unusual, fraudulent, or abusive return activity.',
   },
   {
     type: 'paragraph',
@@ -294,7 +294,7 @@ export const returnRefundPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'H&CO. may update this Return & Refund Policy from time to time.',
+    text: 'olloo may update this Return & Refund Policy from time to time.',
   },
   {
     type: 'paragraph',
@@ -310,7 +310,7 @@ export const returnRefundPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'H&CO.',
+    text: 'olloo',
   },
   {
     type: 'paragraph',

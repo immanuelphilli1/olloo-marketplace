@@ -1,10 +1,11 @@
 /**
- * Steps of the sign-in modal.
+ * Steps of the sign-in modal. `identify` collects the phone number (or, for
+ * accounts created before phone sign-in, the email).
  *
  * `forgot` is the password-reset branch: it collects an email on its own and
  * asks the API for a reset link instead of checking the password.
  */
-export type SignInStep = 'email' | 'password' | 'forgot'
+export type SignInStep = 'identify' | 'password' | 'forgot'
 
 /**
  * Copy for the password-reset view. The confirmation is deliberately neutral
@@ -13,7 +14,7 @@ export type SignInStep = 'email' | 'password' | 'forgot'
  */
 export const forgotPasswordCopy = {
   title: 'Reset your password',
-  subtitle: 'Enter the email you use for H&CO and we will send you a reset link.',
+  subtitle: 'Enter the email on your olloo account and we will send you a reset link.',
   emailPlaceholder: 'Email address',
   submitLabel: 'Send reset link',
   resendLabel: 'Resend reset link',
@@ -25,7 +26,12 @@ export type AuthUser = {
   displayName: string
   fullName: string
   email: string
+  /** Sign-in number in E.164 (`+233...`); null for email-only accounts. */
+  phone?: string | null
 }
+
+/** What the shopper signs in with: a Ghana mobile number or, for older accounts, an email. */
+export type SignInCredentials = { phone: string } | { email: string }
 
 export const defaultSignedInUser: AuthUser = {
   displayName: 'Vikers',

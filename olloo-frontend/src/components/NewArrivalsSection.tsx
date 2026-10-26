@@ -13,10 +13,11 @@ import { getProductPath } from '../data/shopRoutes'
 import { useCatalog } from '../context/CatalogContext'
 import { CarouselDots } from './CarouselDots'
 import { ProductCard } from './ProductCard'
+import { SectionHeading } from './SectionHeading'
 
 const AUTO_PLAY_INTERVAL_MS = 8000
 const MOBILE_PRODUCT_COUNT = 5
-const DESKTOP_ITEMS_PER_VIEW = 4
+const DESKTOP_ITEMS_PER_VIEW = 5
 const DESKTOP_MEDIA_QUERY = '(min-width: 1024px)'
 const TRANSITION_MS = 700
 
@@ -27,9 +28,9 @@ const TRANSITION_MS = 700
  * area while letting the row sit closer to the label.
  */
 const carouselArrowButton =
-  'group flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-bg-secondary px-2 transition-colors hover:bg-orange-light active:bg-orange-light lg:size-12 lg:px-3'
+  'group flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border-secondary bg-bg-primary transition-colors hover:border-brand hover:bg-brand active:bg-brand lg:size-10'
 const carouselArrowIcon =
-  'size-4 text-text-secondary transition-colors group-hover:text-primary-orange lg:size-5'
+  'size-4.5 text-text-primary transition-colors group-hover:text-text-inverse lg:size-5'
 
 function buildLoopedProducts(products: Product[], cloneCount: number) {
   const prefix = products.slice(-cloneCount)
@@ -269,14 +270,11 @@ export function NewArrivalsSection({ onProductSelect }: NewArrivalsSectionProps)
   }, [mobileActiveIndex, mobileProducts.length, scrollToMobileProduct])
 
   return (
-    <section className="overflow-x-clip border-b border-border-primary px-4 lg:px-16">
-      <div className="flex flex-col gap-2 py-4 lg:gap-4 lg:py-6">
-        <div className="flex items-center">
-          <h2 className="flex-1 text-base font-medium leading-5 tracking-[-0.32px] text-text-primary lg:text-2xl lg:leading-8 lg:tracking-[-0.48px]">
-            New Arrivals
-          </h2>
+    <section className="overflow-x-clip px-4 lg:px-16">
+      <div className="flex flex-col gap-4 lg:gap-5">
+        <SectionHeading title="New arrivals" subtitle="Fresh picks just landed on olloo">
           {hasProducts ? (
-            <div className="flex items-center gap-2 lg:gap-4">
+            <>
               <button
                 type="button"
                 onClick={isDesktop ? showPreviousSlide : showMobilePrevious}
@@ -293,9 +291,9 @@ export function NewArrivalsSection({ onProductSelect }: NewArrivalsSectionProps)
               >
                 <ArrowRightSLineIcon className={carouselArrowIcon} aria-hidden />
               </button>
-            </div>
+            </>
           ) : null}
-        </div>
+        </SectionHeading>
 
         {hasProducts && isDesktop ? (
           <>
@@ -307,7 +305,7 @@ export function NewArrivalsSection({ onProductSelect }: NewArrivalsSectionProps)
               <div
                 ref={trackRef}
                 onTransitionEnd={handleTransitionEnd}
-                className={`flex gap-2 will-change-transform ${enableTransition ? 'transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]' : ''}`}
+                className={`flex gap-3 will-change-transform ${enableTransition ? 'transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]' : ''}`}
                 style={{
                   transform: slideStep ? `translate3d(-${slideIndex * slideStep}px, 0, 0)` : undefined,
                 }}
@@ -315,7 +313,7 @@ export function NewArrivalsSection({ onProductSelect }: NewArrivalsSectionProps)
                 {loopedProducts.map((product, index) => (
                   <div
                     key={`${product.id}-${index}`}
-                    className="flex w-[calc((100%-1.5rem)/4)] min-w-0 shrink-0"
+                    className="flex w-[calc((100%-3rem)/5)] min-w-0 shrink-0"
                   >
                     <ProductCard
                       product={product}
@@ -337,7 +335,7 @@ export function NewArrivalsSection({ onProductSelect }: NewArrivalsSectionProps)
                   aria-label={`Go to ${product.name}`}
                   className={`rounded-full transition-[width,background-color] duration-300 ${
                     index === activeProductIndex
-                      ? 'h-2 w-8 bg-primary-orange'
+                      ? 'h-2 w-8 bg-brand'
                       : 'size-2 bg-bg-tertiary hover:bg-border-secondary'
                   }`}
                 />
@@ -349,12 +347,12 @@ export function NewArrivalsSection({ onProductSelect }: NewArrivalsSectionProps)
             <div
               ref={mobileTrackRef}
               onScroll={handleMobileScroll}
-              className="flex gap-2 overflow-x-auto scroll-smooth snap-x snap-mandatory [-ms-overflow-style:none] scrollbar-none [&::-webkit-scrollbar]:hidden"
+              className="flex gap-2.5 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-none"
             >
               {mobileProducts.map((product, index) => (
                 <div
                   key={`${product.id}-${index}`}
-                  className="w-[calc((100%-8px)/2)] shrink-0 snap-start"
+                  className="w-[calc((100%-10px)/2)] shrink-0 snap-start"
                 >
                   <ProductCard
                     product={product}

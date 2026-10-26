@@ -36,6 +36,23 @@ export function formatAmount(money: { amount: number; currency: string } | undef
   return `${money.currency} ${formatAmountDecimal(money.amount)}`
 }
 
+/** Formats a count compactly for social proof: `940`, `1.2k`, `3.4M`. */
+export function formatCompactCount(count: number): string {
+  return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 })
+    .format(count)
+    .toLowerCase()
+}
+
+/**
+ * Splits a display price such as `USD 1,299.00` into its currency code and
+ * amount, so the amount can carry the visual weight. Strings in any other shape
+ * come back whole as the amount.
+ */
+export function splitDisplayPrice(price: string): { currency: string; amount: string } {
+  const match = /^([A-Z]{3})\s+(.+)$/.exec(price.trim())
+  return match ? { currency: match[1], amount: match[2] } : { currency: '', amount: price }
+}
+
 /**
  * Formats an ISO timestamp as a short, readable date (`Jul 7, 2026`).
  * Returns an empty string for missing or unparseable input so callers can decide

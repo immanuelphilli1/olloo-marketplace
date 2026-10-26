@@ -79,7 +79,7 @@ function PaymentRadio({
       aria-label={label}
       aria-pressed={selected}
       className={`flex size-8 shrink-0 items-center justify-center rounded-full border-2 ${
-        selected ? 'border-text-primary bg-text-primary' : 'border-border-secondary bg-bg-primary'
+        selected ? 'border-brand bg-brand' : 'border-border-secondary bg-bg-primary'
       }`}
     >
       {selected ? <span className="size-3 rounded-full bg-bg-primary" aria-hidden /> : null}
@@ -140,9 +140,9 @@ function OrderConflictNotice({
   return (
     <div
       role="alert"
-      className="mt-4 flex flex-col gap-3 rounded-xl bg-orange-light px-4 py-3"
+      className="mt-4 flex flex-col gap-3 rounded-xl bg-brand-light px-4 py-3"
     >
-      <p className="text-sm font-medium leading-4.5 tracking-[-0.28px] text-primary-orange">
+      <p className="text-sm font-medium leading-4.5 tracking-[-0.28px] text-brand">
         {conflict.message}
       </p>
 
@@ -364,7 +364,7 @@ export function CheckoutView({
             <section className="border-b border-border-primary py-4">
               <div className="mb-4 flex items-center justify-between gap-4">
                 <h2 className="text-xl font-semibold leading-6 tracking-[-0.4px] text-text-primary">
-                  Shipping address
+                  Delivery address
                 </h2>
                 <button
                   type="button"
@@ -390,7 +390,7 @@ export function CheckoutView({
                     <div className="min-w-0 flex-1 text-sm leading-4.5 tracking-[-0.28px] text-text-primary">
                       <p className="font-medium">No default address saved</p>
                       <p className="mt-2 font-normal text-text-secondary">
-                        Add one to know where this order ships.
+                        Add one so we know where to deliver this order.
                       </p>
                     </div>
                   )}
@@ -399,7 +399,7 @@ export function CheckoutView({
                   <button
                     type="button"
                     onClick={onEditDefaultAddress}
-                    aria-label="Edit shipping address"
+                    aria-label="Edit delivery address"
                     className="flex size-6 shrink-0 cursor-pointer items-center justify-center self-start"
                   >
                     <EditBoxLineIcon className="size-6 text-text-secondary" aria-hidden />
@@ -409,7 +409,7 @@ export function CheckoutView({
                   className="rounded-xl bg-bg-secondary p-4 text-sm leading-4.5 tracking-[-0.28px] text-text-primary"
                   aria-busy={isQuotingShipping}
                 >
-                  <p className="font-medium">Shipping: {previewShipping.fee}</p>
+                  <p className="font-medium">Delivery: {previewShipping.fee}</p>
                   <div className="mt-2 flex flex-col gap-2 font-normal">
                     <p>{previewShipping.deliveryWindow}</p>
                     <p>{previewShipping.courierLabel}</p>
@@ -513,14 +513,14 @@ export function CheckoutView({
                               src={method.icon}
                             />
                           ) : null}
-                          {method.secondaryIcon ? (
+                          {/* {method.secondaryIcon ? (
                             <img
                               alt=""
                               aria-hidden
                               className="h-6 w-8 object-contain"
                               src={method.secondaryIcon}
                             />
-                          ) : null}
+                          ) : null} */}
                           {method.note ? (
                             <span className="text-sm leading-4.5 tracking-[-0.28px] text-text-secondary">
                               {method.note}
@@ -541,7 +541,7 @@ export function CheckoutView({
               {submitError ? (
                 <p
                   role="alert"
-                  className="mt-4 rounded-xl bg-orange-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-primary-orange"
+                  className="mt-4 rounded-xl bg-brand-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-brand"
                 >
                   {submitError}
                 </p>

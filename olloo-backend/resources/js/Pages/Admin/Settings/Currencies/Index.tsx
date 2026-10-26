@@ -89,7 +89,7 @@ export default function Index({ currencies, pairs, defaultMarkupPercent, default
                         type="button"
                         onClick={refresh}
                         disabled={refreshing}
-                        className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         <FaSync className={refreshing ? 'animate-spin' : ''} />
                         {refreshing ? 'Updating…' : 'Update rates now'}
@@ -219,7 +219,7 @@ function DefaultMarkup({ percent, saved }: { percent: number; saved: boolean }) 
                 <button
                     type="submit"
                     disabled={processing || !isDirty}
-                    className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     {processing ? 'Saving…' : 'Save markup'}
                 </button>
@@ -267,7 +267,7 @@ function PairMarkupEditor({ pair, onDone }: { pair: Pair; onDone: () => void }) 
             <button
                 type="submit"
                 disabled={processing || data.markup_percent === ''}
-                className="cursor-pointer rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="cursor-pointer rounded-md bg-brand px-3 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
             >
                 Save
             </button>

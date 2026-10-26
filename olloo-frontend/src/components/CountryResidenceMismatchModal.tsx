@@ -87,7 +87,7 @@ export function CountryResidenceMismatchModal({
             <button
               type="button"
               onClick={onAddAddressForResidence}
-              className="btn-orange flex min-h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 py-3 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
+              className="btn-brand flex min-h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 py-3 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
             >
               Add a default address in {mismatch.residenceCountryLabel}
             </button>

@@ -1,6 +1,10 @@
 import type { CategoryListingSelection } from './categoryListing'
 
 export type ProductReview = {
+  rid?: string
+  title?: string
+  /** Only set on the shopper's own review: `pending` until staff approve it. */
+  status?: 'pending' | 'published'
   author: string
   location: string
   date: string
@@ -34,6 +38,21 @@ export type ProductDetailVariant = {
   delivery: string
 }
 
+/** One option in a product family, ready to display. */
+export type ProductFamilyOption = {
+  rid: string
+  value: string
+  /** Formatted price, e.g. `GHS 2,093.42`. */
+  price: string
+  inStock: boolean
+  isCurrent: boolean
+}
+
+export type ProductFamily = {
+  optionName: string
+  options: ProductFamilyOption[]
+}
+
 export type ProductDetail = {
   product: import('./products').Product
   images: string[]
@@ -49,12 +68,16 @@ export type ProductDetail = {
   modelOptions: string[]
   descriptionLines: string[]
   reviews: ProductReview[]
-  shippingAddress: {
-    line1: string
-    line2: string
-  }
+  /**
+   * Delivery fee to the shopper's destination, formatted. Empty when the API
+   * had no destination to quote (guests, or no default address).
+   */
   shippingFee: string
+  /** The same fee as money, so the page can add it to the item price. */
+  deliveryFeeMoney: { amount: number; currency: string } | null
   deliveryEstimate: string
+  /** Other sizes of the same model, each its own product; null when it stands alone. */
+  family: ProductFamily | null
   itemsTotal: string
   subtotal: string
 }

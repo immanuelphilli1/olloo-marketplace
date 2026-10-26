@@ -132,7 +132,7 @@ export default function Index({ notifications, unreadCount, filters, types }: Pr
                     <button
                         type="button"
                         onClick={markAllRead}
-                        className="cursor-pointer rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white"
+                        className="cursor-pointer rounded-md bg-brand px-3 py-1.5 text-sm text-white"
                     >
                         Mark all read
                     </button>
@@ -182,7 +182,7 @@ export default function Index({ notifications, unreadCount, filters, types }: Pr
                 <div className="flex items-end gap-2">
                     <button
                         type="submit"
-                        className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm text-white"
+                        className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm text-white"
                     >
                         Apply
                     </button>

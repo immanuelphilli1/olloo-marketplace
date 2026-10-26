@@ -1,11 +1,13 @@
 import { useMemo } from 'react'
 import ArrowRightSLineIcon from 'remixicon-react/ArrowRightSLineIcon'
+import Store2LineIcon from 'remixicon-react/Store2LineIcon'
 import { images } from '../assets/images'
 import {
   aboutCommitmentParagraphs,
   aboutHeroSubtitle,
   aboutHeroTitle,
   aboutIntroParagraphs,
+  aboutSourcing,
   aboutValues,
   aboutVisionText,
   formatStatCount,
@@ -32,7 +34,7 @@ const PAGE_GUTTER = 'px-4 lg:px-16'
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-2xl font-semibold tracking-[-0.64px] text-text-primary lg:text-[40px] lg:leading-11 lg:tracking-[-1.2px]">
+    <h2 className="font-display text-2xl font-bold tracking-[-0.02em] text-text-primary lg:text-[40px] lg:leading-11">
       {children}
     </h2>
   )
@@ -120,10 +122,10 @@ function StatCard({ stat }: { stat: AboutStat }) {
  * the rest fill around it at mixed sizes.
  */
 const VALUE_TILES = [
-  { span: 'lg:col-span-2 lg:row-span-2', surface: 'bg-black', image: images.about.peopleShopping },
+  { span: 'lg:col-span-2 lg:row-span-2', surface: 'bg-ink', image: images.about.peopleShopping },
   { span: '', surface: 'bg-green-light', image: null },
-  { span: '', surface: 'bg-orange-light', image: null },
-  { span: '', surface: 'bg-bg-secondary', image: images.about.mosaicTop },
+  { span: '', surface: 'bg-brand-light', image: null },
+  { span: '', surface: 'bg-bg-secondary', image: images.about.valuesTile },
   { span: 'lg:col-span-2', surface: 'bg-bg-primary', image: null },
 ] as const
 
@@ -151,13 +153,13 @@ function ValueTile({
             className="absolute inset-0 size-full object-cover"
             src={tile.image}
           />
-          <div className="absolute inset-0 bg-[rgba(0,6,7,0.55)]" aria-hidden />
+          <div className="absolute inset-0 bg-ink/60" aria-hidden />
         </>
       ) : null}
 
       <div className="relative flex flex-col gap-2">
         <Icon
-          className={`size-6 shrink-0 ${isPhotoTile ? 'text-text-inverse' : 'text-primary-orange'}`}
+          className={`size-6 shrink-0 ${isPhotoTile ? 'text-text-inverse' : 'text-brand'}`}
           aria-hidden
         />
         <h3
@@ -217,11 +219,11 @@ export function AboutPageContent({ onGoHome, onProductSelect }: AboutPageContent
         ]}
       />
 
-      {/* Hero: black panel carrying the headline, artwork beside it. */}
-      <section className="overflow-hidden bg-black">
+      {/* Hero: ink panel carrying the headline, artwork beside it. */}
+      <section className="overflow-hidden bg-ink">
         <div className="grid lg:grid-cols-2">
           <div className="flex flex-col justify-center gap-5 px-4 py-14 lg:px-16 lg:py-24">
-            <h1 className="max-w-150 text-4xl font-bold leading-tight tracking-[-1.28px] text-text-inverse lg:text-[56px] lg:leading-15 lg:tracking-[-1.68px]">
+            <h1 className="font-display max-w-150 text-4xl font-extrabold leading-tight tracking-[-0.03em] text-text-inverse lg:text-[56px] lg:leading-15">
               {aboutHeroTitle}
             </h1>
             <p className="max-w-150 text-base leading-6 tracking-[-0.32px] text-text-inverse/85 lg:text-xl lg:leading-8">
@@ -230,7 +232,7 @@ export function AboutPageContent({ onGoHome, onProductSelect }: AboutPageContent
           </div>
 
           <AboutImage
-            alt="The H&CO. storefront"
+            alt="A shopper smiling at her phone, holding shopping bags"
             className="min-h-64 lg:min-h-125"
             src={images.about.storefront}
           />
@@ -242,8 +244,8 @@ export function AboutPageContent({ onGoHome, onProductSelect }: AboutPageContent
       <section className={`bg-bg-primary py-12  ${PAGE_GUTTER}`}>
         <div className="grid lg:grid-cols-2 gap-10">
           <div className="flex flex-col gap-5">
-            <h2 className="max-w-180 lg:max-w-full text-2xl font-semibold leading-8 tracking-[-0.64px] text-text-primary lg:text-[32px] lg:leading-10 lg:tracking-[-0.96px]">
-              At H&CO.
+            <h2 className="font-display max-w-180 lg:max-w-full text-2xl font-bold leading-8 tracking-[-0.02em] text-text-primary lg:text-[32px] lg:leading-10">
+              At olloo
             </h2>
             <div className="max-w-180 lg:max-w-full text-base font-normal leading-8 tracking-[-0.64px] text-text-primary lg:text-lg lg:leading-10 lg:tracking-[-0.96px]">
               {firstParagraph}
@@ -256,21 +258,44 @@ export function AboutPageContent({ onGoHome, onProductSelect }: AboutPageContent
 
           <div className="grid grid-cols-2 grid-rows-2 gap-3">
             <AboutImage
-              alt="An H&CO. customer"
-              className="row-span-2 aspect-1 rounded-xl"
+              alt="A shoe seller at a market in Accra"
+              className="row-span-2 aspect-1 rounded-card"
               src={images.about.portrait}
             />
             <AboutImage
-              alt="H&CO. products"
-              className="aspect-4/3 rounded-xl"
+              alt="A delivery rider with parcels on his bike"
+              className="aspect-4/3 rounded-card"
               src={images.about.mosaicTop}
             />
             <AboutImage
-              alt="The H&CO. shopping experience"
-              className="aspect-4/3 rounded-xl"
+              alt="Beaded jewellery on display at an Accra market"
+              className="aspect-4/3 rounded-card"
               src={images.about.mosaicBottom}
             />
           </div>
+        </div>
+      </section>
+
+      {/* Sourcing: where the catalogue comes from. */}
+      <section className={`pb-12 lg:pb-16 ${PAGE_GUTTER}`}>
+        <div className="grid overflow-hidden rounded-card bg-brand-light lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
+          <div className="flex flex-col justify-center gap-4 p-6 lg:p-12">
+            <span className="flex size-12 items-center justify-center rounded-2xl bg-brand text-text-inverse">
+              <Store2LineIcon className="size-6" aria-hidden />
+            </span>
+            <p className="text-sm font-bold uppercase tracking-[0.08em] text-brand">
+              {aboutSourcing.title}
+            </p>
+            <p className="font-display text-2xl font-bold leading-tight tracking-[-0.02em] text-text-primary lg:text-4xl">
+              {aboutSourcing.statement}
+            </p>
+            <p className="max-w-130 text-base leading-7 text-text-secondary">{aboutSourcing.detail}</p>
+          </div>
+          <AboutImage
+            alt="A courier wheeling a parcel to a customer's door"
+            className="min-h-56 lg:min-h-80"
+            src={images.about.sourcing}
+          />
         </div>
       </section>
 
@@ -281,7 +306,7 @@ export function AboutPageContent({ onGoHome, onProductSelect }: AboutPageContent
         >
           <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12">
             <div className="flex flex-col gap-6">
-              <SectionHeading>H&CO. by the numbers</SectionHeading>
+              <SectionHeading>olloo by the numbers</SectionHeading>
               <div className="grid grid-cols-2 gap-4">
                 {stats.map((stat) => (
                   <StatCard key={stat.label} stat={stat} />
@@ -289,8 +314,8 @@ export function AboutPageContent({ onGoHome, onProductSelect }: AboutPageContent
               </div>
             </div>
 
-            <div className="flex flex-col gap-5 rounded-xl bg-black p-6 lg:p-10">
-              <h3 className="text-2xl font-semibold leading-8 tracking-[-0.64px] text-text-inverse lg:text-[32px] lg:leading-10">
+            <div className="flex flex-col gap-5 rounded-card bg-ink p-6 lg:p-10">
+              <h3 className="font-display text-2xl font-bold leading-8 tracking-[-0.02em] text-text-inverse lg:text-[32px] lg:leading-10">
                 Our Vision
               </h3>
               <p className="max-w-150 text-base leading-6 tracking-[-0.32px] text-text-inverse/80 lg:text-lg lg:leading-7">
@@ -336,11 +361,11 @@ export function AboutPageContent({ onGoHome, onProductSelect }: AboutPageContent
           className="absolute inset-0 size-full object-cover"
           src={images.about.featureWide}
         />
-        <div className="absolute inset-0 bg-[rgba(0,6,7,0.62)]" aria-hidden />
+        <div className="absolute inset-0 bg-ink/65" aria-hidden />
 
         <div className={`relative flex flex-col gap-6 py-14 lg:py-24 ${PAGE_GUTTER}`}>
           <div className="flex max-w-160 flex-col gap-5">
-            <h2 className="text-2xl font-semibold leading-8 tracking-[-0.64px] text-text-inverse lg:text-[40px] lg:leading-11 lg:tracking-[-1.2px]">
+            <h2 className="font-display text-2xl font-bold leading-8 tracking-[-0.02em] text-text-inverse lg:text-[40px] lg:leading-11">
               Our Commitment
             </h2>
             {aboutCommitmentParagraphs.map((paragraph) => (

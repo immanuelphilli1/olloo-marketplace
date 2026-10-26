@@ -53,7 +53,7 @@ export function PaymentRedirectOverlay({
       aria-busy="true"
       className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-4 bg-bg-primary px-6"
     >
-      <LoaderLineIcon className="size-10 animate-spin text-primary-orange" aria-hidden />
+      <LoaderLineIcon className="size-10 animate-spin text-brand" aria-hidden />
       <p className="text-center text-base font-medium leading-5 tracking-[-0.32px] text-text-primary">
         {message}
       </p>

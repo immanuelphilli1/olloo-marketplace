@@ -9,13 +9,14 @@ import {
 } from 'react'
 import { authApi } from '../api'
 import { clearAuthStorage, getAccessToken } from '../api/storage'
-import type { AuthUser } from '../data/auth'
+import type { AuthUser, SignInCredentials } from '../data/auth'
 
 type AuthContextValue = {
   authUser: AuthUser | null
   isBootstrapping: boolean
-  signIn: (email: string, password: string) => Promise<void>
+  signIn: (credentials: SignInCredentials, password: string) => Promise<void>
   register: (input: {
+    phone: string
     email: string
     password: string
     fullName: string
@@ -85,13 +86,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const response = await authApi.login(email, password)
+  const signIn = useCallback(async (credentials: SignInCredentials, password: string) => {
+    const response = await authApi.login(credentials, password)
     setAuthUser(response.user)
   }, [])
 
   const register = useCallback(
-    async (input: { email: string; password: string; fullName: string; country: string }) => {
+    async (input: {
+      phone: string
+      email: string
+      password: string
+      fullName: string
+      country: string
+    }) => {
       const response = await authApi.register(input)
       setAuthUser(response.user)
     },

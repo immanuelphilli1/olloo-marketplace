@@ -52,7 +52,7 @@ export default function Index({ staff, filters, canCreate, canEdit }: Props) {
                 {canCreate && (
                     <Link
                         href={route('admin.staff.create')}
-                        className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-800"
+                        className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm text-white hover:bg-brand-dark"
                     >
                         New staff
                     </Link>

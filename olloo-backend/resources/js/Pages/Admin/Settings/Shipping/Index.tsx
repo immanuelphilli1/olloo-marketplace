@@ -94,7 +94,7 @@ export default function Index({ rules, currencies }: { rules: Paginated<RuleRow>
                 {canManage && (
                     <Link
                         href={route('admin.shipping-rules.create')}
-                        className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                        className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
                     >
                         New rule
                     </Link>
@@ -116,7 +116,7 @@ export default function Index({ rules, currencies }: { rules: Paginated<RuleRow>
                     {canManage && (
                         <Link
                             href={route('admin.shipping-rules.create')}
-                            className="mt-4 inline-block cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                            className="mt-4 inline-block cursor-pointer rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
                         >
                             Create the first rule
                         </Link>
@@ -274,7 +274,7 @@ export default function Index({ rules, currencies }: { rules: Paginated<RuleRow>
                     <button
                         type="submit"
                         disabled={testing}
-                        className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         {testing ? 'Testing…' : 'Run test'}
                     </button>

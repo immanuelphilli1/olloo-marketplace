@@ -1,10 +1,10 @@
 export const privacyPolicyMeta = {
-  title: 'H&CO. Privacy Policy',
+  title: 'olloo Privacy Policy',
   lastUpdated: 'August 27, 2026',
 } as const
 
 export const privacyPolicyIntro = [
-  'At H&CO., we respect your privacy and are committed to protecting the personal information you provide when using our website, online store, products, and services.',
+  'At olloo, we respect your privacy and are committed to protecting the personal information you provide when using our website, online store, products, and services.',
   'This Privacy Policy explains what information we collect, how we use it, how we protect it, and the choices you have regarding your personal information.',
 ] as const
 
@@ -20,7 +20,7 @@ export const privacyPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'When you visit or use the H&CO. website, we may collect information such as:',
+    text: 'When you visit or use the olloo website, we may collect information such as:',
   },
   {
     type: 'bullets',
@@ -50,13 +50,13 @@ export const privacyPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'H&CO. may use your information to:',
+    text: 'olloo may use your information to:',
   },
   {
     type: 'bullets',
     items: [
       'Process and fulfill orders',
-      'Arrange delivery and shipping',
+      'Arrange delivery',
       'Process payments',
       'Create and manage customer accounts',
       'Provide customer support',
@@ -77,7 +77,7 @@ export const privacyPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'Payments may be processed through secure third-party payment providers. H&CO. may not directly store complete payment card information on its own systems.',
+    text: 'Payments may be processed through secure third-party payment providers. olloo may not directly store complete payment card information on its own systems.',
   },
   {
     type: 'paragraph',
@@ -89,7 +89,7 @@ export const privacyPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'H&CO. may use cookies, pixels, analytics tools, and similar technologies to operate our website and understand how visitors use it.',
+    text: 'olloo may use cookies, pixels, analytics tools, and similar technologies to operate our website and understand how visitors use it.',
   },
   {
     type: 'paragraph',
@@ -117,7 +117,7 @@ export const privacyPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'We do not sell your personal information simply because you shop with H&CO.',
+    text: 'We do not sell your personal information simply because you shop with olloo.',
   },
   {
     type: 'paragraph',
@@ -137,7 +137,7 @@ export const privacyPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'We may also disclose information when required by law, legal process, court order, or governmental authority, or when reasonably necessary to protect the rights, safety, property, or security of H&CO., our customers, or others.',
+    text: 'We may also disclose information when required by law, legal process, court order, or governmental authority, or when reasonably necessary to protect the rights, safety, property, or security of olloo, our customers, or others.',
   },
   {
     type: 'heading',
@@ -149,7 +149,7 @@ export const privacyPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'H&CO. is not responsible for the privacy practices of third parties. We encourage you to review the privacy policies of any third-party service before providing them with personal information.',
+    text: 'olloo is not responsible for the privacy practices of third parties. We encourage you to review the privacy policies of any third-party service before providing them with personal information.',
   },
   {
     type: 'heading',
@@ -202,7 +202,7 @@ export const privacyPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'To exercise a privacy right, contact H&CO. using the contact information provided on our website.',
+    text: 'To exercise a privacy right, contact olloo using the contact information provided on our website.',
   },
   {
     type: 'heading',
@@ -210,7 +210,7 @@ export const privacyPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'If you choose to receive marketing communications from H&CO., we may send information about products, promotions, special offers, and other updates.',
+    text: 'If you choose to receive marketing communications from olloo, we may send information about products, promotions, special offers, and other updates.',
   },
   {
     type: 'paragraph',
@@ -226,7 +226,7 @@ export const privacyPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'H&CO. does not knowingly collect personal information from children where prohibited by applicable law.',
+    text: 'olloo does not knowingly collect personal information from children where prohibited by applicable law.',
   },
   {
     type: 'paragraph',
@@ -238,7 +238,7 @@ export const privacyPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'Depending on where H&CO. and our service providers operate, your information may be processed or stored in countries other than the country where you live.',
+    text: 'Depending on where olloo and our service providers operate, your information may be processed or stored in countries other than the country where you live.',
   },
   {
     type: 'paragraph',
@@ -250,7 +250,7 @@ export const privacyPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'H&CO. may update this Privacy Policy from time to time to reflect changes in our services, technology, business practices, or legal requirements.',
+    text: 'olloo may update this Privacy Policy from time to time to reflect changes in our services, technology, business practices, or legal requirements.',
   },
   {
     type: 'paragraph',
@@ -262,11 +262,11 @@ export const privacyPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'If you have questions about this Privacy Policy, your personal information, or your privacy rights, please contact H&CO. through the official contact details provided on our website.',
+    text: 'If you have questions about this Privacy Policy, your personal information, or your privacy rights, please contact olloo through the official contact details provided on our website.',
   },
   {
     type: 'paragraph',
-    text: 'H&CO.',
+    text: 'olloo',
   },
   {
     type: 'paragraph',
@@ -290,6 +290,6 @@ export const privacyPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'Important: This Privacy Policy is a general website template and should be reviewed and customized for H&CO.’s actual business operations, country of registration, payment providers, data practices, and applicable privacy laws before publication.',
+    text: 'Important: This Privacy Policy is a general website template and should be reviewed and customized for olloo’s actual business operations, country of registration, payment providers, data practices, and applicable privacy laws before publication.',
   },
 ]

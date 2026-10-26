@@ -11,6 +11,7 @@ use App\Models\UserSetting;
 use App\Services\AuthTokenService;
 use App\Services\CartService;
 use App\Services\GoogleOAuthService;
+use App\Support\GhanaPhone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -54,10 +55,38 @@ final class AuthController extends Controller
         return response()->json(['exists' => true, 'nextStep' => 'password']);
     }
 
+    /**
+     * Phone counterpart of `checkEmail`: tells the storefront whether to ask for
+     * a password or start registration. The number is normalised first, so
+     * `0241234567` and `+233 24 123 4567` find the same account.
+     */
+    public function checkPhone(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'phone' => ['required', 'string', 'max:20'],
+        ]);
+
+        $phone = $this->normalizedPhoneOrFail($data['phone']);
+
+        $exists = User::query()
+            ->where('login_phone', $phone)
+            ->where('is_guest', false)
+            ->exists();
+
+        return response()->json([
+            'exists' => $exists,
+            'nextStep' => $exists ? 'password' : 'register',
+            'phone' => $phone,
+        ]);
+    }
+
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([
             'email' => ['required', 'email', Rule::unique('users', 'email')->withoutTrashed()],
+            // Optional so existing email-only clients keep working; the storefront
+            // always sends it.
+            'phone' => ['nullable', 'string', 'max:20'],
             'password' => ['required', 'confirmed', PasswordRule::defaults()],
             'fullName' => ['required', 'string', 'max:120'],
             'displayName' => ['nullable', 'string', 'max:60'],
@@ -65,6 +94,19 @@ final class AuthController extends Controller
             // the first page after signup is already in their market.
             'country' => ['required', 'string', 'max:120'],
         ]);
+
+        $phone = null;
+        if (filled($data['phone'] ?? null)) {
+            $phone = $this->normalizedPhoneOrFail($data['phone']);
+
+            // Checked against the normalised value, which a `unique` rule on the
+            // raw input would miss (`024...` vs `+23324...`).
+            if (User::query()->where('login_phone', $phone)->exists()) {
+                throw ValidationException::withMessages([
+                    'phone' => ['An account already uses this phone number. Sign in instead.'],
+                ]);
+            }
+        }
 
         $country = Country::resolve($data['country']);
         if (! $country instanceof Country) {
@@ -75,6 +117,9 @@ final class AuthController extends Controller
             'name' => $data['fullName'],
             'display_name' => $data['displayName'] ?? explode(' ', $data['fullName'])[0],
             'email' => $data['email'],
+            'login_phone' => $phone,
+            // Also the contact number shown on the profile.
+            'phone' => $phone,
             'password' => $data['password'],
             'user_type' => 'customer',
             'email_verified_at' => now(),
@@ -88,20 +133,23 @@ final class AuthController extends Controller
         return response()->json($payload, 201);
     }
 
+    /** Signs in with `email` or `phone` (a Ghana mobile number) plus the password. */
     public function login(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'email' => ['required', 'email'],
+            'email' => ['required_without:phone', 'nullable', 'email'],
+            'phone' => ['required_without:email', 'nullable', 'string', 'max:20'],
             'password' => ['required', 'string'],
         ]);
 
-        $user = User::query()
-            ->where('email', $data['email'])
-            ->first();
+        $field = filled($data['phone'] ?? null) ? 'phone' : 'email';
+        $user = $field === 'phone'
+            ? User::query()->where('login_phone', $this->normalizedPhoneOrFail($data['phone']))->first()
+            : User::query()->where('email', $data['email'])->first();
 
         if (! $user || ! $user->password || ! Hash::check($data['password'], $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+                $field => ['The provided credentials are incorrect.'],
             ]);
         }
 
@@ -109,6 +157,13 @@ final class AuthController extends Controller
         $this->carts->mergeGuestCartIfPresent($request, $user);
 
         return response()->json($payload);
+    }
+
+    private function normalizedPhoneOrFail(string $input): string
+    {
+        return GhanaPhone::normalize($input) ?? throw ValidationException::withMessages([
+            'phone' => [GhanaPhone::INVALID_MESSAGE],
+        ]);
     }
 
     public function oauthUrl(string $provider): JsonResponse

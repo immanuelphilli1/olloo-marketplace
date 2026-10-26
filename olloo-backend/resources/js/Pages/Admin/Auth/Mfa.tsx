@@ -86,7 +86,7 @@ export default function Mfa({ mode, secret, otpauthUrl }: Props) {
                 <button
                     type="submit"
                     disabled={processing}
-                    className="cursor-pointer w-full rounded-md bg-slate-900 px-4 py-2 text-white hover:bg-slate-800 disabled:opacity-60"
+                    className="cursor-pointer w-full rounded-md bg-brand px-4 py-2 text-white hover:bg-brand-dark disabled:opacity-60"
                 >
                     {processing ? 'Checking…' : mode === 'setup' ? 'Enable MFA' : 'Verify'}
                 </button>

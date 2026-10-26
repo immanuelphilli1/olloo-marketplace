@@ -78,7 +78,7 @@ export default function Index({ rates, classes, countries, untaxedShippingCountr
                         <button
                             type="button"
                             onClick={() => setEditing('new')}
-                            className="cursor-pointer rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
+                            className="cursor-pointer rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
                         >
                             Add rate
                         </button>
@@ -279,7 +279,7 @@ function RateEditor({
                 <button
                     type="submit"
                     disabled={processing}
-                    className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     {processing ? 'Saving…' : rid ? 'Save rate' : 'Add rate'}
                 </button>
@@ -399,7 +399,7 @@ function RenameClass({ taxClass, onDone }: { taxClass: TaxClassRow; onDone: () =
             <button
                 type="submit"
                 disabled={processing}
-                className="cursor-pointer rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="cursor-pointer rounded-md bg-brand px-3 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
             >
                 Save name
             </button>

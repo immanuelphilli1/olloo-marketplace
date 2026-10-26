@@ -99,7 +99,7 @@ export default function Create({
                                 onClick={() => chooseMode(option.value)}
                                 className={`cursor-pointer rounded-md border px-3 py-1.5 ${
                                     fromCustomer === option.value
-                                        ? 'border-slate-900 bg-slate-900 text-white'
+                                        ? 'border-brand bg-brand text-white'
                                         : 'border-slate-300 text-slate-700'
                                 }`}
                             >
@@ -230,7 +230,7 @@ export default function Create({
                 <button
                     type="submit"
                     disabled={processing || (fromCustomer && !selected)}
-                    className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     {fromCustomer ? 'Promote to staff' : 'Create staff'}
                 </button>

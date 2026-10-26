@@ -54,7 +54,7 @@ export function OrderSummaryPanel({
           <SummaryRow
             label="Items discount:"
             value={summary.itemsDiscount}
-            valueClassName="font-medium text-primary-orange"
+            valueClassName="font-medium text-brand"
           />
           {mode === 'checkout' ? (
             <SummaryRow
@@ -66,7 +66,7 @@ export function OrderSummaryPanel({
         </div>
 
         <div className="flex flex-col gap-4 border-b border-border-primary p-4">
-          <SummaryRow label="Shipping:" value={summary.shipping} />
+          <SummaryRow label="Delivery:" value={summary.shipping} />
           {/* Tax only arrives once the destination country is known, so the row
               appears only when the API actually charged it. */}
           {summary.tax ? <SummaryRow label="Tax:" value={summary.tax} /> : null}
@@ -98,7 +98,7 @@ export function OrderSummaryPanel({
             type="button"
             onClick={onPrimaryAction}
             disabled={isBusy}
-            className="btn-orange flex h-10 w-full cursor-pointer items-center justify-center rounded-full px-4 text-sm font-medium leading-4.5 tracking-[-0.28px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-70"
+            className="btn-brand flex h-10 w-full cursor-pointer items-center justify-center rounded-full px-4 text-sm font-medium leading-4.5 tracking-[-0.28px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-70"
           >
             {primaryLabel}
           </button>

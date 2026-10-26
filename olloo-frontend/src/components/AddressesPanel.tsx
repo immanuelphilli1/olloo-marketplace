@@ -68,7 +68,7 @@ function AddressDefaultToggle({
     >
       <span
         className={`flex size-8 shrink-0 items-center justify-center rounded-full border-2 ${
-          isDefault ? 'border-text-primary bg-text-primary' : 'border-border-secondary bg-bg-primary'
+          isDefault ? 'border-brand bg-brand' : 'border-border-secondary bg-bg-primary'
         }`}
         aria-hidden
       >
@@ -409,7 +409,7 @@ export function AddressesPanel({
             type="button"
             onClick={openAddModal}
             disabled={isSaving}
-            className="btn-orange flex w-full shrink-0 cursor-pointer items-center justify-center rounded-full px-6 py-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
+            className="btn-brand flex w-full shrink-0 cursor-pointer items-center justify-center rounded-full px-6 py-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
           >
             Add new address
           </button>
@@ -418,7 +418,7 @@ export function AddressesPanel({
         {errorMessage ? (
           <p
             role="alert"
-            className="rounded-xl bg-orange-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-primary-orange"
+            className="rounded-xl bg-brand-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-brand"
           >
             {errorMessage}
           </p>

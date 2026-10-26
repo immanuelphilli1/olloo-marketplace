@@ -28,6 +28,7 @@ class User extends Authenticatable
         'display_name',
         'email',
         'phone',
+        'login_phone',
         'avatar_path',
         'user_type',
         'is_guest',
@@ -48,6 +49,7 @@ class User extends Authenticatable
         'remember_token',
         'two_factor_secret',
         'active_email',
+        'active_login_phone',
     ];
 
     protected function casts(): array
@@ -107,6 +109,8 @@ class User extends Authenticatable
             'displayName' => $this->display_name ?: explode(' ', $this->name)[0],
             'fullName' => $this->name,
             'email' => $this->email,
+            // The sign-in number in E.164 (`+233...`), null for email-only accounts.
+            'phone' => $this->login_phone,
         ];
     }
 }

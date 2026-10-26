@@ -22,7 +22,7 @@ final class MailBrandAssetController extends Controller
             $recorder->markOpenedByRid($rid, $request);
         }
 
-        $relative = (string) config('brand.logo.path', 'images/brand/handco-logo.png');
+        $relative = (string) config('brand.logo.path', 'images/brand/olloo-logo.png');
         $path = public_path($relative);
 
         if (! is_file($path)) {

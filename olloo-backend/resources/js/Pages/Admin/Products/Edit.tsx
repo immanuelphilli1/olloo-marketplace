@@ -5,6 +5,7 @@ import {
     ProductForm,
     newVariant,
     productPayload,
+    type FamilyMember,
     type ProductAttributeDefinition,
     type ProductAttributeRow,
     type ProductFormData,
@@ -21,6 +22,10 @@ type Product = {
     categoryRid: string | null;
     tags: string[];
     shippingClassRid: string | null;
+    familyKey: string | null;
+    familyOptionName: string | null;
+    familyOptionValue: string | null;
+    familyMembers: FamilyMember[];
     attributes: ProductAttributeRow[];
     variants: Array<{
         rid: string;
@@ -68,6 +73,9 @@ export default function Edit({ product, categoryTree, allTags, shippingClasses, 
         category_rid: product.categoryRid ?? '',
         tags: product.tags ?? [],
         shipping_class_rid: product.shippingClassRid ?? '',
+        family_key: product.familyKey ?? '',
+        family_option_name: product.familyOptionName ?? 'Size',
+        family_option_value: product.familyOptionValue ?? '',
         price: product.price,
         original_price: product.originalPrice ?? '',
         discount_notice: product.discountNotice ?? '',
@@ -124,6 +132,7 @@ export default function Edit({ product, categoryTree, allTags, shippingClasses, 
                 onSubmit={submit}
                 submitLabel="Save changes"
                 cancelHref={route('admin.products.index')}
+                familyMembers={product.familyMembers}
             />
 
             {canDelete && (

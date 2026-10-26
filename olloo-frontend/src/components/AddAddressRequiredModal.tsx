@@ -88,7 +88,7 @@ export function AddAddressRequiredModal({
             <button
               type="button"
               onClick={onContinue}
-              className="btn-orange flex h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
+              className="btn-brand flex h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
             >
               Continue
             </button>

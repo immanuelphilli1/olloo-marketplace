@@ -1,7 +1,7 @@
 @extends('emails.layouts.brand')
 
 @section('preheader')
-Example HandCO email using the Graphite Minimal shell.
+Example olloo email using the Graphite Minimal shell.
 @endsection
 
 @section('content')
@@ -11,6 +11,6 @@ Example HandCO email using the Graphite Minimal shell.
 
     @include('emails.partials.button', [
         'url' => config('app.url'),
-        'label' => 'Open HandCO',
+        'label' => 'Open olloo',
     ])
 @endsection

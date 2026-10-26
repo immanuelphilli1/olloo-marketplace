@@ -145,7 +145,7 @@ export default function Index({ products, filters, categoryTree, tags, storefron
                 {permissions.includes('create_products') && (
                     <Link
                         href={route('admin.products.create', filters.category ? { category: filters.category } : undefined)}
-                        className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                        className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
                     >
                         New product
                     </Link>

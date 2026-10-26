@@ -16,7 +16,7 @@ export default function Pagination({ links }: { links: LinkItem[] }) {
                     disabled={!link.url || link.active}
                     className={`cursor-pointer rounded-md border px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-50 ${
                         link.active
-                            ? 'border-slate-900 bg-slate-900 text-white'
+                            ? 'border-brand bg-brand text-white'
                             : 'border-slate-300 bg-white'
                     }`}
                     onClick={() => link.url && router.get(link.url)}

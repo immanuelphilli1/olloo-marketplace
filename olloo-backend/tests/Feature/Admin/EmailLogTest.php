@@ -53,7 +53,7 @@ final class EmailLogTest extends TestCase
 
     public function test_brand_logo_is_rewritten_to_open_tracking_url(): void
     {
-        $logoUrl = asset('images/brand/handco-logo.png');
+        $logoUrl = asset('images/brand/olloo-logo.png');
 
         Mail::html(
             '<html><body><img src="'.$logoUrl.'" alt="HandCO"><p>Hello</p></body></html>',
@@ -153,7 +153,7 @@ final class EmailLogTest extends TestCase
             ->get('/'.$prefix.'/email-logs/'.$log->rid.'/preview')
             ->assertOk()
             ->assertDontSee('/images/mail/'.$rid.'.png', false)
-            ->assertSee('/images/brand/handco-logo.png', false);
+            ->assertSee('/images/brand/olloo-logo.png', false);
 
         $log->refresh();
         $this->assertNull($log->read_at);

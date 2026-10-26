@@ -1,12 +1,12 @@
 import type { PrivacyPolicyBlock } from './privacyPolicy'
 
 export const shippingDeliveryPolicyMeta = {
-  title: 'H&CO. Shipping & Delivery Policy',
+  title: 'olloo Delivery Policy',
   lastUpdated: 'August 27, 2026',
 } as const
 
 export const shippingDeliveryPolicyIntro = [
-  'At H&CO., we are committed to making your shopping experience simple from checkout to delivery. Our Shipping & Delivery Policy explains how orders are processed, shipped, tracked, and delivered.',
+  'At olloo, we are committed to making your shopping experience simple from checkout to delivery. Our Delivery Policy explains how orders are processed, dispatched, tracked, and delivered.',
 ] as const
 
 export const shippingDeliveryPolicyBlocks: PrivacyPolicyBlock[] = [
@@ -32,7 +32,7 @@ export const shippingDeliveryPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'Estimated delivery times depend on your delivery location, shipping method, product availability, and courier service.',
+    text: 'Estimated delivery times depend on your delivery location, delivery method, product availability, and courier service.',
   },
   {
     type: 'paragraph',
@@ -52,29 +52,29 @@ export const shippingDeliveryPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'heading',
-    text: '3. Shipping Costs',
+    text: '3. Delivery Costs',
   },
   {
     type: 'paragraph',
-    text: 'Shipping charges are calculated based on factors such as:',
+    text: 'Delivery charges are calculated based on factors such as:',
   },
   {
     type: 'bullets',
     items: [
       'Delivery destination',
       'Order size and weight',
-      'Shipping method',
+      'Delivery method',
       'Product type',
       'Applicable promotions',
     ],
   },
   {
     type: 'paragraph',
-    text: 'The applicable shipping cost will be displayed at checkout before you complete your purchase.',
+    text: 'The applicable delivery cost will be displayed at checkout before you complete your purchase.',
   },
   {
     type: 'paragraph',
-    text: 'From time to time, H&CO. may offer free or discounted shipping promotions.',
+    text: 'From time to time, olloo may offer free or discounted delivery promotions.',
   },
   {
     type: 'heading',
@@ -114,7 +114,7 @@ export const shippingDeliveryPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'H&CO. may not be responsible for delays or additional costs caused by incorrect or incomplete delivery information provided by the customer.',
+    text: 'olloo may not be responsible for delays or additional costs caused by incorrect or incomplete delivery information provided by the customer.',
   },
   {
     type: 'heading',
@@ -134,11 +134,11 @@ export const shippingDeliveryPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'heading',
-    text: '7. International Shipping',
+    text: '7. International Delivery',
   },
   {
     type: 'paragraph',
-    text: 'H&CO. may offer international shipping to selected countries.',
+    text: 'olloo may offer international delivery to selected countries.',
   },
   {
     type: 'paragraph',
@@ -162,7 +162,7 @@ export const shippingDeliveryPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'H&CO. does not control customs processing times or charges imposed by destination-country authorities.',
+    text: 'olloo does not control customs processing times or charges imposed by destination-country authorities.',
   },
   {
     type: 'paragraph',
@@ -204,7 +204,7 @@ export const shippingDeliveryPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'If the package remains missing, contact H&CO. as soon as possible.',
+    text: 'If the package remains missing, contact olloo as soon as possible.',
   },
   {
     type: 'paragraph',
@@ -220,7 +220,7 @@ export const shippingDeliveryPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'Contact H&CO. as soon as possible and provide your order details along with photographs or other relevant evidence.',
+    text: 'Contact olloo as soon as possible and provide your order details along with photographs or other relevant evidence.',
   },
   {
     type: 'paragraph',
@@ -232,7 +232,7 @@ export const shippingDeliveryPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'If your order contains multiple products, items may occasionally be shipped separately depending on product availability, warehouse location, size, or delivery requirements.',
+    text: 'If your order contains multiple products, items may occasionally be delivered separately depending on product availability, warehouse location, size, or delivery requirements.',
   },
   {
     type: 'paragraph',
@@ -244,7 +244,7 @@ export const shippingDeliveryPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'Products listed as pre-order or backordered may have different shipping timelines.',
+    text: 'Products listed as pre-order or backordered may have different delivery timelines.',
   },
   {
     type: 'paragraph',
@@ -252,7 +252,7 @@ export const shippingDeliveryPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'If an order contains both immediately available and pre-order items, H&CO. may ship the available products separately or hold the order depending on the applicable fulfillment arrangement.',
+    text: 'If an order contains both immediately available and pre-order items, olloo may send the available products separately or hold the order depending on the applicable fulfillment arrangement.',
   },
   {
     type: 'heading',
@@ -276,7 +276,7 @@ export const shippingDeliveryPolicyBlocks: PrivacyPolicyBlock[] = [
   },
   {
     type: 'paragraph',
-    text: 'H&CO.',
+    text: 'olloo',
   },
   {
     type: 'paragraph',

@@ -48,7 +48,7 @@ export default function Index({ slots, orphans, canEdit }: Props) {
                             {canEdit && (
                                 <Link
                                     href={route('admin.placements.create', { slot: `${slot.page}.${slot.position}` })}
-                                    className="cursor-pointer rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white"
+                                    className="cursor-pointer rounded-md bg-brand px-3 py-1.5 text-sm text-white"
                                 >
                                     Add banner
                                 </Link>

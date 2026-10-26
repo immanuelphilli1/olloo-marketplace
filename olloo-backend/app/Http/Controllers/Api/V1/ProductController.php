@@ -75,8 +75,58 @@ final class ProductController extends Controller
         $payload = ProductMapper::toDetail($product, $this->variantQuotes($product, $destination));
         $liked = $this->products->likedMap($request, collect([$product]));
         $payload['product']['liked'] = $liked[$product->id] ?? null;
+        $payload['family'] = $this->family($product, $destination);
 
         return response()->json($payload);
+    }
+
+    /**
+     * Sibling products in the same family (for example one TV model in several
+     * sizes), offered as options on the product page. Null unless at least two
+     * active products share the key, so a lone product shows no selector.
+     *
+     * @return array{optionName: string, options: list<array<string, mixed>>}|null
+     */
+    private function family(Product $product, ?string $destination): ?array
+    {
+        if ($product->family_key === null || $product->family_key === '') {
+            return null;
+        }
+
+        $members = $this->products->activeQuery()
+            ->where('family_key', $product->family_key)
+            ->with(['category.parent', 'tags', 'attributeValues.definition', 'defaultVariant'])
+            ->get();
+
+        if ($members->count() < 2) {
+            return null;
+        }
+
+        app(DestinationPricing::class)->attach($members->all(), $destination);
+
+        $options = $members
+            ->map(function (Product $member) use ($product): array {
+                $card = ProductMapper::toListItem($member);
+
+                return [
+                    'rid' => $member->rid,
+                    'value' => $member->family_option_value ?: $member->name,
+                    'priceMoney' => $card['priceMoney'],
+                    'originalPriceMoney' => $card['originalPriceMoney'],
+                    'inStock' => $card['inStock'],
+                    'imageUrl' => $card['imageUrl'] ?? null,
+                    'isCurrent' => $member->id === $product->id,
+                ];
+            })
+            // Natural order, so 32" < 43" < 55" and 7kg < 10kg.
+            ->sort(fn (array $a, array $b) => strnatcasecmp($a['value'], $b['value']))
+            ->values()
+            ->all();
+
+        return [
+            'optionName' => $product->family_option_name ?: 'Size',
+            'options' => $options,
+        ];
     }
 
     public function related(Request $request, Product $product): JsonResponse
@@ -134,12 +184,25 @@ final class ProductController extends Controller
         $avgRating = (float) (clone $query)->avg('rating');
         $reviews = $query->forPage($page, $limit)->get();
 
+        // The signed-in shopper sees their own review even while it waits for
+        // approval, so a review they just wrote does not seem to vanish.
+        $viewer = $request->user('sanctum');
+        $mine = $viewer === null ? null : Review::query()
+            ->where('product_id', $product->id)
+            ->where('user_id', $viewer->id)
+            ->latest('id')
+            ->first();
+
         return response()->json([
             'reviews' => $reviews->map(fn (Review $review) => ProductMapper::reviewToArray($review))->values()->all(),
             'total' => $total,
             'page' => $page,
             'limit' => $limit,
             'avgRating' => round($avgRating, 1),
+            'myReview' => $mine === null ? null : [
+                ...ProductMapper::reviewToArray($mine),
+                'status' => $mine->is_approved ? 'published' : 'pending',
+            ],
         ]);
     }
 

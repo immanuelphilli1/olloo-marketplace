@@ -212,7 +212,7 @@ export function Switch({
                     onChange={(e) => onChange(e.target.checked)}
                     className="peer sr-only"
                 />
-                <span className="h-5 w-9 rounded-full bg-slate-300 transition-colors peer-checked:bg-slate-900 peer-focus-visible:ring-2 peer-focus-visible:ring-slate-400 peer-focus-visible:ring-offset-2" />
+                <span className="h-5 w-9 rounded-full bg-slate-300 transition-colors peer-checked:bg-brand peer-focus-visible:ring-2 peer-focus-visible:ring-slate-400 peer-focus-visible:ring-offset-2" />
                 <span className="pointer-events-none absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform peer-checked:translate-x-4" />
             </span>
         </label>

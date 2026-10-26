@@ -2,13 +2,15 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formsApi } from '../api'
 import { images } from '../assets/images'
-import { resolveCategoryId, type SidebarCategoryId } from '../data/categoriesModal'
+import type { SidebarCategoryId } from '../data/categoriesModal'
+import { getCategoryPath } from '../data/shopRoutes'
 import { Icon } from './Icon'
+import { OllooLogo } from './OllooLogo'
 
 type FooterLink = {
   label: string
   href?: string
-  /** Opens the category modal for this category instead of navigating. */
+  /** Links to this department's listing. */
   categoryId?: SidebarCategoryId
 }
 
@@ -19,15 +21,15 @@ type FooterColumn = {
 
 const footerColumns: FooterColumn[] = [
   {
-    heading: 'COMPANY',
+    heading: 'Company',
     links: [
-      { label: 'About H&CO.', href: '/about' },
+      { label: 'About olloo', href: '/about' },
       { label: 'Affiliate, Partnership & Influencer Program' },
       { label: 'Press Releases' },
     ],
   },
   {
-    heading: 'MARKET PLACE',
+    heading: 'Marketplace',
     links: [
       { label: 'Electronics & Tech', categoryId: 'electronics' },
       { label: 'Fashion & Accessories', categoryId: 'fashion' },
@@ -37,7 +39,7 @@ const footerColumns: FooterColumn[] = [
     ],
   },
   {
-    heading: 'SOURCE ON H&CO.',
+    heading: 'Shop on olloo',
     links: [
       { label: 'Trending Products' },
       { label: 'Request Quotation' },
@@ -45,17 +47,17 @@ const footerColumns: FooterColumn[] = [
     ],
   },
   {
-    heading: 'TERMS',
+    heading: 'Policies',
     links: [
       { label: 'Warranty', href: '/warranty' },
-      { label: 'Shipping & Delivery', href: '/shipping-delivery' },
+      { label: 'Delivery', href: '/shipping-delivery' },
       { label: 'Return & Refund Policy', href: '/return-refund' },
       { label: 'Terms & Conditions', href: '/terms-of-use' },
       { label: 'Privacy Policy', href: '/privacy-policy' },
     ],
   },
   {
-    heading: 'CUSTOMER SUPPORT',
+    heading: 'Help & support',
     links: [
       { label: 'Live Chat' },
       { label: 'Secured Payments', href: '/secure-payments' },
@@ -75,7 +77,7 @@ const footerColumns: FooterColumn[] = [
  * Customer Support link and Terms is a Terms link).
  */
 const mobileFooterLinkLabels = [
-  'About H&CO.',
+  'About olloo',
   'Affiliate, Partnership & Influencer Program',
   'Live Chat',
   'Press Releases',
@@ -97,41 +99,22 @@ const mobileFooterLinks = mobileFooterLinkLabels.flatMap((label) => {
   return link ? [link] : []
 })
 
-const footerHeadingClass = 'text-sm font-medium tracking-[-0.28px] text-text-tertiary'
+const footerHeadingClass = 'text-sm font-bold text-text-inverse'
 const footerLinkClass =
-  'block py-1.5 text-base font-medium tracking-[-0.32px] text-text-secondary hover:text-text-primary lg:py-2'
-const footerLinkButtonClass =
-  'block w-full cursor-pointer py-1.5 text-left text-base font-medium tracking-[-0.32px] text-text-secondary hover:text-text-primary lg:py-2'
+  'block py-1.5 text-sm font-medium text-text-inverse/65 transition-colors hover:text-text-inverse'
 
 /**
- * One footer link. Navigation, category-modal and placeholder links are all
- * resolved here so the mobile and desktop layouts cannot render them
- * differently.
+ * One footer link. Page and department links navigate; links without a
+ * destination yet stay as inert placeholders.
  */
-function FooterLinkItem({
-  link,
-  onCategoryClick,
-}: {
-  link: FooterLink
-  onCategoryClick?: (link: FooterLink) => void
-}) {
-  if (link.href) {
+function FooterLinkItem({ link }: { link: FooterLink }) {
+  const to = link.href ?? (link.categoryId ? getCategoryPath(link.categoryId) : null)
+
+  if (to) {
     return (
-      <Link to={link.href} className={footerLinkClass}>
+      <Link to={to} onClick={() => window.scrollTo({ top: 0 })} className={footerLinkClass}>
         {link.label}
       </Link>
-    )
-  }
-
-  if (link.categoryId && onCategoryClick) {
-    return (
-      <button
-        type="button"
-        onClick={() => onCategoryClick(link)}
-        className={footerLinkButtonClass}
-      >
-        {link.label}
-      </button>
     )
   }
 
@@ -144,17 +127,19 @@ function FooterLinkItem({
 
 function FooterSocialIcons() {
   return (
-    <div className="flex items-center gap-4 lg:gap-1 xl:gap-4">
+    <div className="flex items-center gap-2">
       {socialIcons.map((icon) => (
         <a
           key={icon.label}
           href={icon.href}
           aria-label={icon.label}
+          className="flex size-9 items-center justify-center rounded-full bg-text-inverse/10 transition-colors hover:bg-brand"
           {...(icon.href.startsWith('http')
             ? { target: '_blank', rel: 'noopener noreferrer' }
             : {})}
         >
-          <Icon src={icon.src} />
+          {/* The glyphs are dark-filled SVGs, so they are inverted for the dark footer. */}
+          <Icon src={icon.src} className="size-4.5 brightness-0 invert" />
         </a>
       ))}
     </div>
@@ -194,23 +179,9 @@ const paymentIcons = [
   images.footer.tabby,
 ]
 
-type FooterProps = {
-  /** Opens the shared category modal on the given category (Market Place links). */
-  onOpenCategories?: (categoryId: SidebarCategoryId, label: string) => void
-}
-
-export function Footer({ onOpenCategories }: FooterProps) {
+export function Footer() {
   const [email, setEmail] = useState('')
   const [subscribeMessage, setSubscribeMessage] = useState('')
-
-  // Only wired up when the modal can actually be opened, so a category link
-  // falls back to a plain link instead of rendering a button that does nothing.
-  const onCategoryClick = onOpenCategories
-    ? (link: FooterLink) => {
-        const categoryId = link.categoryId ?? resolveCategoryId(link.label)
-        onOpenCategories(categoryId, link.label)
-      }
-    : undefined
 
   const handleSubscribe = async () => {
     if (!email.trim()) return
@@ -227,136 +198,135 @@ export function Footer({ onOpenCategories }: FooterProps) {
   }
 
   return (
-    // `pb-24` reserved room for the fixed mobile tab bar. The bar sits at the
-    // viewport bottom, not the page bottom, so on the final screenful the extra
-    // 84px reads as dead space; `pb-16` still clears it while scrolling.
-    <footer className="flex w-full flex-col pb-16 lg:pb-0">
-      <div className="border border-border-primary px-4 lg:px-16">
-        <div className="flex flex-col gap-8 border-x border-border-primary px-4 py-6 lg:gap-14 lg:px-6 lg:py-16">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-            <div className="hidden lg:block">
-            <img alt="H&CO." className="size-22" src={images.footer.logo} />
-            </div>
-            <div className="w-full lg:ml-auto lg:w-124">
-              <p className="mb-2 text-base font-medium tracking-[-0.32px] text-text-primary lg:text-center">
-                Stay updated with H&CO. newsletters and promotions
-              </p>
-              <div className="flex items-center gap-2 rounded-full border border-border-secondary bg-bg-primary p-1">
-                <label className="flex min-w-0 flex-1 items-center gap-2 p-2">
-                  <Icon src={images.footer.mail} />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="Emaill"
-                    className="min-w-0 flex-1 bg-transparent text-base font-medium tracking-[-0.32px] text-text-primary outline-none placeholder:text-text-tertiary"
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => void handleSubscribe()}
-                  className="btn-orange flex h-10 items-center rounded-full p-4"
-                >
-                  <span className="text-sm font-medium tracking-[-0.28px] text-text-inverse">
-                    Subscribe
-                  </span>
-                </button>
-              </div>
-              {subscribeMessage ? (
-                <p className="mt-2 text-sm tracking-[-0.28px] text-text-secondary">{subscribeMessage}</p>
-              ) : null}
-            </div>
-          </div>
+    // Bottom padding on phones clears the fixed tab bar.
+    <footer className="flex w-full flex-col bg-ink pb-20 text-text-inverse lg:mt-4 lg:rounded-t-[28px] lg:pb-0">
+      <div className="flex flex-col gap-6 border-b border-text-inverse/10 px-4 py-8 lg:flex-row lg:items-center lg:justify-between lg:px-16 lg:py-12">
+        <div className="flex max-w-sm flex-col gap-3">
+          <OllooLogo className="h-8 w-auto self-start text-text-inverse" />
+          <p className="text-sm leading-relaxed text-text-inverse/65">
+            Everything you love, one tap away. Shop electronics, fashion, home and more with secure
+            checkout and tracked delivery.
+          </p>
+        </div>
 
-          {/* Phones: a single COMPANY group with the five links that matter. */}
-          <div className="flex w-full flex-col gap-4 md:hidden">
-            <p className={footerHeadingClass}>COMPANY</p>
-            <ul className="flex flex-col">
-              {mobileFooterLinks.map((link) => (
-                <li key={link.label}>
-                  <FooterLinkItem link={link} onCategoryClick={onCategoryClick} />
-                </li>
-              ))}
-            </ul>
-            <div className="mt-4 lg:mt-8">
-              <FooterSocialIcons />
-            </div>
-          </div>
+        <div className="w-full lg:max-w-md">
+          <p className="font-display mb-1 text-lg font-bold">Get deals in your inbox</p>
+          <p className="mb-3 text-sm text-text-inverse/65">
+            New arrivals, price drops and offers from olloo. Unsubscribe any time.
+          </p>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              void handleSubscribe()
+            }}
+            className="flex items-center gap-2 rounded-full bg-bg-primary p-1.5"
+          >
+            <label className="flex min-w-0 flex-1 items-center gap-2 pl-3">
+              <Icon src={images.footer.mail} className="size-5" />
+              <span className="sr-only">Email address</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="Your email address"
+                autoComplete="email"
+                className="min-w-0 flex-1 bg-transparent text-sm font-medium text-text-primary outline-none placeholder:text-text-tertiary"
+              />
+            </label>
+            <button
+              type="submit"
+              className="flex h-10 shrink-0 cursor-pointer items-center rounded-full bg-accent px-5 text-sm font-bold text-accent-ink transition-transform hover:-translate-y-px"
+            >
+              Subscribe
+            </button>
+          </form>
+          {subscribeMessage ? (
+            <p className="mt-2 text-sm text-text-inverse/75" role="status">
+              {subscribeMessage}
+            </p>
+          ) : null}
+        </div>
+      </div>
 
-          {/* Tablet and up: the full column layout, unchanged. */}
-          <div className="hidden w-full md:flex md:flex-wrap md:gap-y-6 lg:flex-nowrap lg:gap-6">
-            {footerColumns.map((column, index) => (
-              <div key={column.heading} className="flex min-w-0 flex-col gap-4 md:w-1/3 lg:flex-1">
-                <p className={footerHeadingClass}>{column.heading}</p>
-                <ul className="flex flex-col">
-                  {column.links.map((link) => (
-                    <li key={link.label}>
-                      <FooterLinkItem link={link} onCategoryClick={onCategoryClick} />
-                    </li>
-                  ))}
-                </ul>
-                {index === footerColumns.length - 1 && (
-                  <div className="mt-8 lg:mt-0">
-                    <FooterSocialIcons />
-                  </div>
-                )}
-              </div>
+      <div className="px-4 py-8 lg:px-16 lg:py-12">
+        {/* Phones: a single short group with the five links that matter. */}
+        <div className="flex w-full flex-col gap-3 md:hidden">
+          <p className={footerHeadingClass}>Company</p>
+          <ul className="flex flex-col">
+            {mobileFooterLinks.map((link) => (
+              <li key={link.label}>
+                <FooterLinkItem link={link} />
+              </li>
+            ))}
+          </ul>
+          <div className="mt-4">
+            <FooterSocialIcons />
+          </div>
+        </div>
+
+        {/* Tablet and up: the full column layout. */}
+        <div className="hidden w-full md:grid md:grid-cols-3 md:gap-y-8 lg:grid-cols-5 lg:gap-8">
+          {footerColumns.map((column, index) => (
+            <div key={column.heading} className="flex min-w-0 flex-col gap-3">
+              <p className={footerHeadingClass}>{column.heading}</p>
+              <ul className="flex flex-col">
+                {column.links.map((link) => (
+                  <li key={link.label}>
+                    <FooterLinkItem link={link} />
+                  </li>
+                ))}
+              </ul>
+              {index === footerColumns.length - 1 && (
+                <div className="mt-3">
+                  <FooterSocialIcons />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="hidden flex-col gap-6 border-t border-text-inverse/10 px-4 py-6 lg:flex lg:flex-row lg:items-center lg:justify-between lg:px-16">
+        <div className="flex items-center gap-4">
+          <p className="text-sm font-semibold text-text-inverse/65">Get the app</p>
+          <img alt="Download on the App Store" className="h-10 w-30" src={images.footer.appStore} />
+          <img alt="Get it on Google Play" className="h-10 w-34" src={images.footer.googlePlay} />
+        </div>
+
+        <div className="flex flex-col items-end gap-2">
+          <p className="text-xs font-semibold text-text-inverse/50">We accept</p>
+          {/* Payment and trust marks are drawn for light backgrounds, so each
+              sits on its own white chip. */}
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
+            {paymentIcons.map((icon) => (
+              <span key={icon} className="flex h-8 w-11 items-center justify-center rounded-md bg-bg-primary p-1">
+                <img alt="" className="max-h-full max-w-full object-contain" src={icon} />
+              </span>
+            ))}
+            <span className="relative h-8 w-11 overflow-hidden rounded-md bg-bg-primary">
+              <img alt="Tamara" className="size-full object-cover" src={images.footer.tamara} />
+              <img
+                alt=""
+                className="absolute inset-x-[12.5%] top-[41.67%] h-[19.63%]"
+                src={images.footer.tamaraIcon}
+              />
+            </span>
+            <span className="flex h-8 w-11 items-center justify-center rounded-md bg-bg-primary">
+              <img alt="Google Pay" className="h-[41.17%] w-[74.78%] object-contain" src={images.footer.googlePay} />
+            </span>
+            {trustBadges.map((badge) => (
+              <span key={badge} className="flex h-8 items-center rounded-md bg-bg-primary px-1.5">
+                <img alt="" className="h-6 object-contain" src={badge} />
+              </span>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="hidden lg:block border-b border-border-primary px-4 lg:px-16">
-        <div className="flex flex-col gap-6 border-x border-border-primary p-4 lg:flex-row lg:items-end lg:gap-4 lg:p-6">
-          <div className="flex flex-col gap-6">
-            <p className="text-base font-medium tracking-[-0.32px] text-text-secondary">
-              Download the H&CO. App on
-            </p>
-            <div className="flex items-center gap-4">
-              <img alt="Download on the App Store" className="h-10 w-30" src={images.footer.appStore} />
-              <img alt="Get it on Google Play" className="h-10 w-34" src={images.footer.googlePlay} />
-            </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row gap-4 lg:ml-auto lg:items-end lg:justify-end">
-            <div className="flex flex-wrap items-center gap-2">
-              {trustBadges.map((badge) => (
-                <img key={badge} alt="" className="h-7 object-contain" src={badge} />
-              ))}
-            </div>
-            <div className="flex flex-nowrap items-center gap-2 lg:gap-3.5">
-              {paymentIcons.map((icon) => (
-                <img key={icon} alt="" className="h-7 w-9 object-contain" src={icon} />
-              ))}
-              <div className="relative h-7 w-9 overflow-hidden rounded border border-border-primary">
-                <img alt="Tamara" className="size-full object-cover" src={images.footer.tamara} />
-                <img
-                  alt=""
-                  className="absolute inset-x-[12.5%] top-[41.67%] h-[19.63%]"
-                  src={images.footer.tamaraIcon}
-                />
-              </div>
-              <div className="flex h-7 w-9 items-center justify-center rounded border border-border-primary bg-bg-primary">
-                <img alt="Google Pay" className="h-[41.17%] w-[74.78%] object-contain" src={images.footer.googlePay} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="border-b border-border-primary px-4 lg:px-16">
-        <div className="flex flex-col gap-2 p-3 lg:flex-row lg:items-center lg:justify-between lg:p-6">
-          {/* <div /> */}
-          {/* <img alt="Compliance badges" className="h-12 w-38 object-contain" src={images.footer.compliance} /> */}
-          <div className="lg:w-full lg:text-left">
-            <p className="text-sm font-medium tracking-[-0.28px] text-text-tertiary">
-            H&CO • Nordbær • Gridvolt • Gründen
-            </p>
-            <p className="text-[10px] lg:text-base font-medium tracking-[-0.32px] text-text-secondary pb-4 lg:pb-0">
-              © 2026 Hayes Distribution and Trade Network. All rights reserved.
-            </p>
-          </div>
-        </div>
+      <div className="border-t border-text-inverse/10 px-4 py-5 lg:px-16">
+        <p className="text-xs font-medium text-text-inverse/50">
+          © {new Date().getFullYear()} olloo. All rights reserved.
+        </p>
       </div>
     </footer>
   )

@@ -51,7 +51,7 @@ export default function Index({ classes }: { classes: ShippingClassRow[] }) {
                 <button
                     type="submit"
                     disabled={create.processing}
-                    className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     Add class
                 </button>
@@ -157,7 +157,7 @@ function RenameRow({ row, onDone }: { row: ShippingClassRow; onDone: () => void 
                     <button
                         type="submit"
                         disabled={processing}
-                        className="cursor-pointer rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="cursor-pointer rounded-md bg-brand px-3 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         Save name
                     </button>

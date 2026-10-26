@@ -152,7 +152,7 @@ function statusBadgeClassName(status: OrderStatus): string {
     case 'processing':
       return 'bg-[#f0b100]'
     case 'shipped':
-      return 'bg-primary-orange'
+      return 'bg-brand'
     case 'pending_payment':
       // Matches the yellow "processing" badge; the order is live but unpaid.
       return 'bg-[#f0b100]'
@@ -240,13 +240,13 @@ function AccountSidebar({
             onClick={isNavigable ? () => onSectionChange(item.id as AccountSection) : undefined}
             className={`flex w-full items-center gap-2 p-2 text-left ${
               isActive
-                ? 'border-l-2 border-primary-orange bg-orange-light'
+                ? 'border-l-2 border-brand bg-brand-light'
                 : 'bg-bg-primary'
             } ${isNavigable ? 'cursor-pointer' : 'cursor-default'}`}
           >
             <Icon
               className={`size-6 shrink-0 ${
-                isActive ? 'text-primary-orange' : 'text-text-secondary'
+                isActive ? 'text-brand' : 'text-text-secondary'
               }`}
               aria-hidden
             />
@@ -365,7 +365,7 @@ function OrderCard({
         >
           View order details
           <ArrowRightSLineIcon
-            className="size-6 text-text-secondary transition-colors group-hover:text-primary-orange"
+            className="size-6 text-text-secondary transition-colors group-hover:text-brand"
             aria-hidden
           />
         </button>
@@ -396,7 +396,7 @@ function OrderCard({
             type="button"
             onClick={() => onBuyAgain(order)}
             disabled={isBuyingAgain}
-            className="flex h-8.5 cursor-pointer items-center justify-center rounded-full bg-orange-light px-4 text-sm font-medium leading-4 tracking-[-0.28px] text-primary-orange disabled:cursor-wait disabled:opacity-60"
+            className="flex h-8.5 cursor-pointer items-center justify-center rounded-full bg-brand-light px-4 text-sm font-medium leading-4 tracking-[-0.28px] text-brand disabled:cursor-wait disabled:opacity-60"
           >
             {isBuyingAgain ? 'Adding…' : 'Buy Again'}
           </button>
@@ -420,7 +420,7 @@ function OrderCard({
                 type="button"
                 onClick={() => onMakePayment(order)}
                 disabled={isPayingOrderId === order.id}
-                className="flex h-8.5 cursor-pointer items-center justify-center rounded-full bg-primary-orange px-4 text-sm font-medium leading-4 tracking-[-0.28px] text-text-inverse disabled:cursor-wait disabled:opacity-60"
+                className="flex h-8.5 cursor-pointer items-center justify-center rounded-full bg-brand px-4 text-sm font-medium leading-4 tracking-[-0.28px] text-text-inverse disabled:cursor-wait disabled:opacity-60"
               >
                 {isPayingOrderId === order.id ? 'Opening…' : 'Make payment'}
               </button>
@@ -772,7 +772,7 @@ function OrdersPanel({
       {notice ? (
         <p
           role="alert"
-          className="mb-4 rounded-xl bg-orange-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-primary-orange"
+          className="mb-4 rounded-xl bg-brand-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-brand"
         >
           {notice}
         </p>
@@ -793,7 +793,7 @@ function OrdersPanel({
               >
                 {tab.label}
                 {isActive ? (
-                  <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary-orange" aria-hidden />
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 bg-brand" aria-hidden />
                 ) : null}
               </button>
             )
@@ -943,7 +943,7 @@ function ReviewRowActions({
       >
         View order details
         <ArrowRightSLineIcon
-          className="size-6 text-text-secondary transition-colors group-hover:text-primary-orange"
+          className="size-6 text-text-secondary transition-colors group-hover:text-brand"
           aria-hidden
         />
       </button>
@@ -975,7 +975,7 @@ function WaitingReviewRow({
           <button
             type="button"
             onClick={() => onAddReview(review)}
-            className="flex h-8.5 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-full border border-primary-orange px-4 text-sm font-medium leading-4.5 tracking-[-0.28px] text-primary-orange lg:w-full lg:flex-none"
+            className="flex h-8.5 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-full border border-brand px-4 text-sm font-medium leading-4.5 tracking-[-0.28px] text-brand lg:w-full lg:flex-none"
           >
             Add review
           </button>
@@ -1066,7 +1066,7 @@ function ReviewedReviewRow({
         primaryAction={
           <button
             type="button"
-            className="btn-orange flex h-8.5 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-full px-4 text-sm font-medium leading-4.5 tracking-[-0.28px] text-text-inverse lg:h-9 lg:w-full lg:flex-none lg:text-base lg:leading-5 lg:tracking-[-0.32px]"
+            className="btn-brand flex h-8.5 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-full px-4 text-sm font-medium leading-4.5 tracking-[-0.28px] text-text-inverse lg:h-9 lg:w-full lg:flex-none lg:text-base lg:leading-5 lg:tracking-[-0.32px]"
           >
             Buy Again
           </button>
@@ -1229,7 +1229,7 @@ function ReviewsPanel() {
             >
               {tab.label}
               {isActive ? (
-                <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary-orange" aria-hidden />
+                <span className="absolute inset-x-0 bottom-0 h-0.5 bg-brand" aria-hidden />
               ) : null}
             </button>
           )
@@ -1308,7 +1308,7 @@ function BuyAgainProductCard({
         <button
           type="button"
           onClick={() => onAddToCart(product.id)}
-          className="btn-orange mt-2 flex h-8.5 w-full cursor-pointer items-center justify-center rounded-full px-4 text-sm font-medium leading-4 tracking-[-0.28px] text-text-inverse"
+          className="btn-brand mt-2 flex h-8.5 w-full cursor-pointer items-center justify-center rounded-full px-4 text-sm font-medium leading-4 tracking-[-0.28px] text-text-inverse"
         >
           Add to cart
         </button>
@@ -1340,7 +1340,7 @@ function ProfileTabs({
           >
             {tab.label}
             {isActive ? (
-              <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary-orange" aria-hidden />
+              <span className="absolute inset-x-0 bottom-0 h-0.5 bg-brand" aria-hidden />
             ) : null}
           </button>
         )
@@ -1385,7 +1385,7 @@ function CountryResidenceSelect({
         Country of residence
       </p>
       <p className="mt-2 text-sm leading-4.5 tracking-[-0.28px] text-text-secondary">
-        Used for delivery estimates and tax on products when you have no default shipping
+        Used for delivery estimates and tax on products when you have no default delivery
         address.
       </p>
       <label
@@ -1648,7 +1648,7 @@ function SecurityActionButton({ label, onClick }: { label: string; onClick: () =
     <button
       type="button"
       onClick={onClick}
-      className="btn-orange flex h-12 w-27.5 shrink-0 cursor-pointer items-center justify-center rounded-full px-6 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
+      className="btn-brand flex h-12 w-27.5 shrink-0 cursor-pointer items-center justify-center rounded-full px-6 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
     >
       {label}
     </button>
@@ -2039,7 +2039,7 @@ function ProfilePanel({ onSectionChange }: { onSectionChange: (section: AccountS
       {errorMessage ? (
         <p
           role="alert"
-          className="mx-4 mt-4 rounded-xl bg-orange-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-primary-orange lg:mx-6"
+          className="mx-4 mt-4 rounded-xl bg-brand-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-brand lg:mx-6"
         >
           {errorMessage}
         </p>

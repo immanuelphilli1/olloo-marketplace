@@ -54,7 +54,7 @@ function PaymentMessage({
         <div className="rounded-xl bg-bg-secondary p-4 text-center lg:p-6">
           <div
             className={`mx-auto flex size-32 items-center justify-center rounded-full p-2 ${
-              isSuccess ? 'bg-primary-green' : isInfo ? 'bg-bg-tertiary' : 'bg-primary-orange'
+              isSuccess ? 'bg-primary-green' : isInfo ? 'bg-bg-tertiary' : 'bg-brand'
             }`}
           >
             {isSuccess ? (
@@ -78,7 +78,7 @@ function PaymentMessage({
             <button
               type="button"
               onClick={onGoHome}
-              className="btn-orange flex h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse lg:w-auto"
+              className="btn-brand flex h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse lg:w-auto"
             >
               Go to home
             </button>
@@ -86,7 +86,7 @@ function PaymentMessage({
             <button
               type="button"
               onClick={onGoHome}
-              className="btn-orange cursor-pointer rounded-full px-6 py-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
+              className="btn-brand cursor-pointer rounded-full px-6 py-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
             >
               Continue shopping
             </button>
@@ -94,7 +94,7 @@ function PaymentMessage({
             <button
               type="button"
               onClick={onGoToCart}
-              className="btn-orange cursor-pointer rounded-full px-6 py-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
+              className="btn-brand cursor-pointer rounded-full px-6 py-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse"
             >
               Back to cart
             </button>
@@ -187,7 +187,7 @@ export function PaymentReturnView({
       <section className="border-t border-border-primary px-4 pb-10 pt-6 lg:px-16 lg:pt-8">
         <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 rounded-xl bg-bg-secondary p-8 text-center">
           <span
-            className="size-8 animate-spin rounded-full border-2 border-border-secondary border-t-primary-orange"
+            className="size-8 animate-spin rounded-full border-2 border-border-secondary border-t-brand"
             aria-hidden
           />
           <h1 className="text-xl font-medium leading-6 tracking-[-0.4px] text-text-primary">

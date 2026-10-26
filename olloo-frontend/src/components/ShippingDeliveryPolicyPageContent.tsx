@@ -22,7 +22,7 @@ export function ShippingDeliveryPolicyPageContent({
 
   return (
     <LegalDocumentPageContent
-      breadcrumbLabel="Shipping & Delivery"
+      breadcrumbLabel="Delivery"
       title={page.title}
       lastUpdated={page.lastUpdated}
       intro={page.intro}

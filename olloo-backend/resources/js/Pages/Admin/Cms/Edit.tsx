@@ -414,7 +414,7 @@ export default function Edit({ page }: Props) {
                 <button
                     type="submit"
                     disabled={processing}
-                    className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60"
+                    className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm text-white disabled:opacity-60"
                 >
                     Save page
                 </button>

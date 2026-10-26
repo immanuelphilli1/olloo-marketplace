@@ -1,4 +1,8 @@
 export const images = {
+  brand: {
+    mark: '/assets/brand/olloo-mark.svg',
+    wordmark: '/assets/brand/olloo-wordmark.svg',
+  },
   auth: {
     google: '/assets/auth/google.svg',
     facebook: '/assets/auth/facebook.svg',
@@ -122,24 +126,23 @@ export const images = {
     empty: "/assets/orders/empty-orders.svg",
   },
   about: {
-    hero: "/assets/about/hero.png",
-    shoppingCart: "/assets/about/shopping-cart.png",
     /**
-     * Photography for the About page. Each entry is named for the band it
-     * serves rather than its filename, so the page can be re-laid-out without
-     * renaming assets. Falls back to `hero` where a slot has no photo yet.
+     * Photography for the About page, named for the band it serves rather than
+     * its subject, so the page can be re-laid-out without renaming assets.
+     *
+     * All are from Pexels (free for commercial use under the Pexels License, no
+     * attribution required). Source photo ids, for re-downloading or crediting:
+     * storefront 7007180, portrait 38330562, mosaicTop 6868462, mosaicBottom
+     * 20618742, peopleShopping 13571548, valuesTile 36537041, featureWide
+     * 36392318, sourcing 6169013 (https://www.pexels.com/photo/<id>/).
      */
-    peopleShopping: "/assets/about/IMG_2012.JPG",
-    portrait: "/assets/about/IMG_2235.JPG",
-    mosaicTop: "/assets/about/IMG_2023.JPG",
-    mosaicBottom: "/assets/about/IMG_2236.JPG",
-    vision: "/assets/about/IMG_2020.JPG",
-    featureWide: "/assets/about/IMG_2011.JPG",
-    storefront: "/assets/about/IMG_2052.JPG",
-    /**
-     * Fallback artwork. Kept pointing at the hero so an unphotographed slot
-     * still renders rather than collapsing.
-     */
-    placeholder: "/assets/about/hero.png",
+    storefront: "/assets/about/shopper-phone-bags.jpg",
+    portrait: "/assets/about/accra-shoe-seller.jpg",
+    mosaicTop: "/assets/about/delivery-rider.jpg",
+    mosaicBottom: "/assets/about/accra-beadwork.jpg",
+    peopleShopping: "/assets/about/accra-market-walk.jpg",
+    valuesTile: "/assets/about/accra-market-basket.jpg",
+    featureWide: "/assets/about/accra-market-street.jpg",
+    sourcing: "/assets/about/parcel-delivery.jpg",
   },
 } as const

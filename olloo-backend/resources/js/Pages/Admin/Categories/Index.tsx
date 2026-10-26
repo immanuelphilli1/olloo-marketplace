@@ -57,7 +57,7 @@ export default function Index({ tree, canCreate, canEdit, canDelete }: Props) {
                     {canCreate && (
                         <Link
                             href={route('admin.categories.create')}
-                            className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                            className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
                         >
                             New top-level category
                         </Link>

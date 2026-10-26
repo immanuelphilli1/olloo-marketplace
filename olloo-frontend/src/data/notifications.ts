@@ -8,7 +8,7 @@ export type NotificationSetting = {
 }
 
 export const notificationScamWarning =
-  'H&CO. does not ask customers for additional fees via SMS or emial.'
+  'olloo does not ask customers for additional fees via SMS or email.'
 
 export const defaultNotificationSettings: NotificationSetting[] = [
   {

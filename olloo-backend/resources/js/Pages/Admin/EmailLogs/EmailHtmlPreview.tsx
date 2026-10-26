@@ -46,7 +46,7 @@ export default function EmailHtmlPreview({ previewUrl, hasHtml, textFallback }: 
                             onClick={() => setViewport(key)}
                             className={`cursor-pointer rounded-md px-2.5 py-1 text-xs ${
                                 viewport === key
-                                    ? 'bg-slate-900 text-white'
+                                    ? 'bg-brand text-white'
                                     : 'border border-slate-300 bg-white text-slate-700'
                             }`}
                         >
@@ -68,7 +68,7 @@ export default function EmailHtmlPreview({ previewUrl, hasHtml, textFallback }: 
                         type="button"
                         onClick={() => setBg('light')}
                         className={`cursor-pointer rounded-md px-2.5 py-1 text-xs ${
-                            bg === 'light' ? 'bg-slate-900 text-white' : 'border border-slate-300 bg-white'
+                            bg === 'light' ? 'bg-brand text-white' : 'border border-slate-300 bg-white'
                         }`}
                     >
                         Light stage

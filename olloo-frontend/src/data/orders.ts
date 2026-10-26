@@ -70,7 +70,7 @@ export const orderFilterTabs: { id: OrderFilter; label: string }[] = [
   { id: 'all', label: 'All Orders' },
   { id: 'pending_payment', label: 'Awaiting Payment' },
   { id: 'processing', label: 'Processing' },
-  { id: 'shipped', label: 'Shipped' },
+  { id: 'shipped', label: 'Dispatched' },
   { id: 'delivered', label: 'Delivered' },
   { id: 'returns', label: 'Returns' },
   { id: 'cancelled', label: 'Cancelled' },
@@ -89,7 +89,7 @@ export const orderTrackingStages: OrderTrackingStage[] = [
   },
   {
     key: 'shipped',
-    label: 'Shipped',
+    label: 'Dispatched',
     description: 'Your parcel is on its way with our courier partner.',
   },
   {
@@ -110,7 +110,7 @@ export function getReachedStageCount(status: OrderStatus): number {
 }
 
 /** Where an order sits against each delivery stage. */
-export type OrderStageState = 'done' | 'active' | 'upcoming'
+export type OrderStageState = 'done' | 'active' | 'upcoming' | 'cancelled'
 
 /** One row of the delivery timeline. */
 export type OrderTimelineStep = {
@@ -133,7 +133,8 @@ function normalizeLabel(label: string): string {
  * Every stage is always returned, not just the reached ones, so the shopper can
  * see what is still to come. Each stage is marked `done` when the order has
  * passed it, `active` at the stage it currently sits on, and `upcoming` beyond
- * that. A cancelled order never entered the journey, so nothing is marked.
+ * that. A cancelled order stops the whole journey, so every stage is marked
+ * `cancelled`; the first one carries the cancellation date when the API sent it.
  *
  * Timestamps come from the API's tracking events when they can be matched to a
  * stage, so the dates shown are the server's rather than the client's guess.
@@ -143,8 +144,7 @@ export function buildOrderTimeline(
   events: OrderTrackingEvent[],
 ): OrderTimelineStep[] {
   const reachedCount = getReachedStageCount(status)
-  // A cancelled order has no delivery journey to report progress against.
-  const effectiveReached = status === 'cancelled' ? 0 : reachedCount
+  const isCancelled = status === 'cancelled'
 
   // Labels are matched first because the server's wording is authoritative. The
   // index fallback only applies when the server reported a complete timeline,
@@ -158,14 +158,27 @@ export function buildOrderTimeline(
 
   return orderTrackingStages.map((stage, index) => {
     const event = matchedByLabel.get(normalizeLabel(stage.label)) ?? eventsByIndex?.[index]
-    const state: OrderStageState =
-      index < effectiveReached ? 'done' : index === effectiveReached ? 'active' : 'upcoming'
+    const state: OrderStageState = isCancelled
+      ? 'cancelled'
+      : index < reachedCount
+        ? 'done'
+        : index === reachedCount
+          ? 'active'
+          : 'upcoming'
+    // A cancelled order is dated once, on the stage it was stopped at.
+    const cancelledOn = isCancelled && index === 0
+      ? (matchedByLabel.get('cancelled') ?? matchedByLabel.get('ordercancelled'))?.occurredAt
+      : undefined
 
     return {
       key: stage.key,
       label: stage.label,
-      description: stage.description,
-      occurredAt: state === 'upcoming' ? '' : (event?.occurredAt ?? ''),
+      description:
+        isCancelled && index === 0 ? 'This order was cancelled, so it will not be processed or delivered.' : stage.description,
+      occurredAt:
+        state === 'upcoming' || (isCancelled && index > 0)
+          ? ''
+          : (cancelledOn ?? (isCancelled ? '' : (event?.occurredAt ?? ''))),
       state,
     }
   })
@@ -237,7 +250,7 @@ export function getOrdersEmptyStateMessage(
     case 'processing':
       return "You don't have any processing orders"
     case 'shipped':
-      return "You don't have any shipped orders"
+      return "You don't have any dispatched orders"
     case 'delivered':
       return "You don't have any delivered orders"
     case 'pending_payment':

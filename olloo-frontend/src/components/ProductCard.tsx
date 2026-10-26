@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
-import AddLineIcon from 'remixicon-react/AddLineIcon'
 import HeartFillIcon from 'remixicon-react/HeartFillIcon'
 import HeartLineIcon from 'remixicon-react/HeartLineIcon'
+import ShoppingCart2LineIcon from 'remixicon-react/ShoppingCart2LineIcon'
 import StarFillIcon from 'remixicon-react/StarFillIcon'
 import { useShop } from '../context/ShopContext'
+import { formatCompactCount, splitDisplayPrice } from '../data/format'
 import type { Product } from '../data/products'
 
 type ProductCardProps = {
@@ -39,13 +40,22 @@ export function ProductCard({
     discount,
     delivery,
     rating,
+    reviewCount,
+    soldCount,
     showAddButton = false,
     priceOrange = false,
     imageObjectPosition,
+    inStock,
   } = product
 
   const isLiked = controlledIsLiked ?? isProductLiked(product.id)
-  const shouldShowAddButton = !selectionMode && (enableAddButton || showAddButton)
+  // `inStock` is only false when the API says so; older payloads omit it.
+  const isSoldOut = inStock === false
+  const shouldShowAddButton =
+    !selectionMode && !isSoldOut && (enableAddButton || showAddButton)
+  const ratingValue = Number.parseFloat(rating)
+  const hasRating = Number.isFinite(ratingValue) && ratingValue > 0
+  const { currency, amount } = splitDisplayPrice(price)
 
   const handleToggleLike = () => {
     if (onLikedChange) {
@@ -61,30 +71,46 @@ export function ProductCard({
   const handleAddToCart = (event: React.MouseEvent) => {
     event.preventDefault()
     event.stopPropagation()
-    addToCart(product)
+    // A failure is reported by the add-to-cart notice, so it is not rethrown here.
+    addToCart(product).catch(() => undefined)
   }
 
   const handleCardClick = () => {
     onClick?.()
   }
 
-  const cardClassName = `group/card flex h-full w-full min-w-0 max-w-full flex-col overflow-hidden rounded-[12px] border border-border-primary p-2 ${
+  const cardClassName = `group/card flex h-full w-full min-w-0 max-w-full flex-col overflow-hidden rounded-card border border-border-primary bg-bg-primary transition-[box-shadow,border-color,transform] duration-300 hover:border-transparent hover:shadow-card ${
     onClick || to ? 'cursor-pointer' : ''
   }`
 
   const cardContent = (
     <>
-      <div className="relative flex aspect-square w-full flex-col justify-between overflow-hidden rounded-lg">
-        <div aria-hidden className="pointer-events-none absolute inset-0 rounded-lg">
-          <div className="absolute inset-0 rounded-lg bg-[#1da1f2]" />
-          <img
-            alt=""
-            className={`absolute size-full max-w-none rounded-lg object-cover ${imageObjectPosition ?? ''}`}
-            src={image}
-          />
-        </div>
+      <div className="relative aspect-square w-full overflow-hidden bg-bg-secondary">
+        <img
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className={`absolute inset-0 size-full object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.04] ${
+            isSoldOut ? 'opacity-60 grayscale' : ''
+          } ${imageObjectPosition ?? ''}`}
+          src={image}
+        />
 
-        <div className="relative flex w-full items-start justify-between p-3">
+        {/* Badges stack top-left; the wishlist control owns the top-right corner. */}
+        <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2 lg:p-2.5">
+          <div className="flex min-w-0 flex-col items-start gap-1">
+            {discount && !selectionMode ? (
+              <span className="tabular-price rounded-md bg-primary-red px-1.5 py-0.5 text-xs font-bold text-text-inverse">
+                {discount}
+              </span>
+            ) : null}
+            {tag && !selectionMode ? (
+              <span className="hidden max-w-full truncate rounded-md bg-bg-primary/90 px-1.5 py-0.5 text-[11px] font-semibold text-text-primary backdrop-blur-sm sm:block">
+                {tag}
+              </span>
+            ) : null}
+          </div>
+
           {selectionMode ? (
             <button
               type="button"
@@ -92,9 +118,9 @@ export function ProductCard({
                 event.stopPropagation()
                 selectionMode.onSelectedChange(!selectionMode.selected)
               }}
-              className={`flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 lg:size-8 ${
+              className={`flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 ${
                 selectionMode.selected
-                  ? 'border-primary-orange bg-primary-orange'
+                  ? 'border-brand bg-brand'
                   : 'border-border-secondary bg-bg-primary'
               }`}
               aria-label={selectionMode.selected ? 'Deselect product' : 'Select product'}
@@ -105,90 +131,94 @@ export function ProductCard({
               ) : null}
             </button>
           ) : (
-            <>
-              <div className="h-6 w-18 shrink-0 lg:hidden" aria-hidden />
-              <div className="hidden rounded-full px-2 py-1 lg:block">
-                <p className="truncate text-xs font-medium tracking-[-0.24px] text-text-inverse">
-                  {tag}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={(event) => {
-                  // preventDefault is required as well: the card is a <Link>, and
-                  // stopping propagation alone still lets the browser follow the
-                  // anchor href, which is what navigated away from the page.
-                  event.preventDefault()
-                  event.stopPropagation()
-                  handleToggleLike()
-                }}
-                className={`flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors ${
-                  isLiked ? 'bg-primary-orange/50' : 'bg-glass hover:bg-primary-orange/50'
-                }`}
-                aria-label={isLiked ? 'Remove from wishlist' : 'Add to wishlist'}
-                aria-pressed={isLiked}
-              >
-                {isLiked ? (
-                  <HeartFillIcon className="size-5 text-primary-red" aria-hidden />
-                ) : (
-                  <HeartLineIcon className="size-5 text-text-inverse" aria-hidden />
-                )}
-              </button>
-            </>
+            <button
+              type="button"
+              onClick={(event) => {
+                // preventDefault is required as well: the card is a <Link>, and
+                // stopping propagation alone still lets the browser follow the
+                // anchor href, which is what navigated away from the page.
+                event.preventDefault()
+                event.stopPropagation()
+                handleToggleLike()
+              }}
+              className={`flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-bg-primary shadow-[0_2px_8px_rgba(21,17,43,0.12)] transition-transform hover:scale-105 active:scale-95 ${
+                isLiked ? '' : 'lg:opacity-0 lg:group-hover/card:opacity-100 lg:focus-visible:opacity-100'
+              }`}
+              aria-label={isLiked ? 'Remove from wishlist' : 'Add to wishlist'}
+              aria-pressed={isLiked}
+            >
+              {isLiked ? (
+                <HeartFillIcon className="size-5 text-primary-red" aria-hidden />
+              ) : (
+                <HeartLineIcon className="size-5 text-text-primary" aria-hidden />
+              )}
+            </button>
           )}
         </div>
 
-        <div className="relative hidden p-3 lg:p-4">
-          <div className="inline-flex items-center gap-2 rounded-full bg-glass px-2 py-1">
-            <StarFillIcon className="size-5 text-primary-gold" aria-hidden />
-            <span className="text-base font-medium tracking-[-0.32px] text-text-inverse">
-              {rating}
-            </span>
-          </div>
-        </div>
+        {isSoldOut ? (
+          <span className="absolute inset-x-2 bottom-2 rounded-md bg-ink/80 py-1 text-center text-xs font-semibold text-text-inverse">
+            Sold out
+          </span>
+        ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col gap-1.5 px-1 py-1.5 lg:gap-2 lg:py-2">
-        <p className="text-sm font-medium tracking-[-0.28px] text-text-secondary">{category}</p>
-        <p className="line-clamp-2 text-base font-semibold tracking-[-0.32px] text-text-primary lg:min-h-10">
+      <div className="flex flex-1 flex-col gap-1 p-2.5 lg:p-3">
+        <p className="truncate text-xs font-medium text-text-tertiary">{category}</p>
+        <p className="line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-text-primary">
           {name}
         </p>
-        <div className="mt-auto flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+
+        {hasRating ? (
+          <div className="flex min-w-0 items-center gap-1 text-xs text-text-secondary">
+            <StarFillIcon className="size-3.5 shrink-0 text-primary-gold" aria-hidden />
+            <span className="font-semibold text-text-primary">{ratingValue.toFixed(1)}</span>
+            {reviewCount ? (
+              <span className="text-text-tertiary">({formatCompactCount(reviewCount)})</span>
+            ) : null}
+            {soldCount ? (
+              <>
+                <span aria-hidden className="text-border-secondary">
+                  |
+                </span>
+                <span className="truncate">{formatCompactCount(soldCount)} sold</span>
+              </>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="mt-auto flex items-end justify-between gap-2 pt-1">
+          <div className="flex min-w-0 flex-col">
             <p
-              className={`text-base font-semibold tracking-[-0.32px] sm:text-xl sm:tracking-[-0.4px] ${
-                priceOrange || selectionMode ? 'text-primary-orange' : 'text-text-primary'
+              className={`tabular-price flex items-baseline gap-1 font-bold leading-tight ${
+                priceOrange || selectionMode ? 'text-brand' : 'text-text-primary'
               }`}
             >
-              {price}
+              {currency ? <span className="text-xs font-semibold">{currency}</span> : null}
+              <span className="text-base sm:text-lg">{amount}</span>
             </p>
-            {originalPrice && (
-              <p className="text-sm font-medium tracking-[-0.28px] text-text-tertiary line-through sm:text-base sm:tracking-[-0.32px]">
+            {originalPrice ? (
+              <p className="tabular-price truncate text-xs font-medium text-text-tertiary line-through">
                 {originalPrice}
               </p>
-            )}
-            {discount && (
-              <span className="rounded-full bg-red-light px-2 py-1 text-xs font-medium tracking-[-0.24px] text-primary-red">
-                {discount}
-              </span>
-            )}
+            ) : null}
           </div>
-          <div className="flex items-center justify-between gap-2">
-            <p className="min-w-0 text-sm font-medium tracking-[-0.28px] text-primary-green">
-              {delivery}
-            </p>
-            {shouldShowAddButton && (
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary-orange transition-[opacity,background-color] duration-300 hover:bg-primary-orange/80 lg:size-12 lg:pointer-events-none lg:opacity-0 lg:group-hover/card:pointer-events-auto lg:group-hover/card:opacity-100"
-                aria-label="Add to cart"
-              >
-                <AddLineIcon className="size-5 text-text-inverse lg:size-6" aria-hidden />
-              </button>
-            )}
-          </div>
+
+          {shouldShowAddButton ? (
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              className="btn-brand flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full shadow-[0_6px_16px_-6px_rgba(91,43,224,0.7)] transition-transform hover:scale-105 active:scale-95 lg:size-10"
+              aria-label={`Add ${name} to cart`}
+            >
+              <ShoppingCart2LineIcon className="size-4.5 text-text-inverse lg:size-5" aria-hidden />
+            </button>
+          ) : null}
         </div>
+
+        {delivery ? (
+          <p className="truncate text-xs font-semibold text-primary-green">{delivery}</p>
+        ) : null}
       </div>
     </>
   )

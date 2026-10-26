@@ -15,10 +15,10 @@ class ContentSeeder extends Seeder
         $pages = [
             [
                 'slug' => 'about',
-                'title' => 'About H&CO',
+                'title' => 'About olloo',
                 'last_updated' => 'January 1, 2026',
                 'intro' => [
-                    'H&CO is a curated marketplace for electronics, home, fashion, and energy products across the UAE and Ghana.',
+                    'olloo is a curated marketplace for electronics, home, fashion, and energy products across the UAE and Ghana.',
                 ],
                 'blocks' => [
                     ['type' => 'heading', 'text' => 'Our mission'],
@@ -33,10 +33,10 @@ class ContentSeeder extends Seeder
             ],
             [
                 'slug' => 'privacy-policy',
-                'title' => 'H&CO Privacy Policy',
+                'title' => 'olloo Privacy Policy',
                 'last_updated' => 'January 1, 2026',
                 'intro' => [
-                    'This Privacy Policy explains how H&CO collects, uses, and protects your personal information.',
+                    'This Privacy Policy explains how olloo collects, uses, and protects your personal information.',
                 ],
                 'blocks' => [
                     ['type' => 'heading', 'text' => '1. Introduction'],
@@ -51,7 +51,7 @@ class ContentSeeder extends Seeder
                     ['type' => 'heading', 'text' => '3. How we use information'],
                     ['type' => 'paragraph', 'text' => 'We use your information to process orders, provide support, send transactional updates, and (with your preference) promotional messages.'],
                     ['type' => 'heading', 'text' => '4. Contact'],
-                    ['type' => 'paragraph', 'text' => 'For privacy requests, email privacy@handco.test.'],
+                    ['type' => 'paragraph', 'text' => 'For privacy requests, contact our support team.'],
                 ],
             ],
             [
@@ -59,7 +59,7 @@ class ContentSeeder extends Seeder
                 'title' => 'Warranty Policy',
                 'last_updated' => 'January 1, 2026',
                 'intro' => [
-                    'Most products sold on H&CO include a manufacturer or seller warranty. Coverage varies by brand and category.',
+                    'Most products sold on olloo include a manufacturer or seller warranty. Coverage varies by brand and category.',
                 ],
                 'blocks' => [
                     ['type' => 'heading', 'text' => 'Coverage'],
@@ -74,7 +74,7 @@ class ContentSeeder extends Seeder
             ],
             [
                 'slug' => 'shipping-delivery',
-                'title' => 'Shipping & Delivery',
+                'title' => 'Delivery',
                 'last_updated' => 'January 1, 2026',
                 'intro' => [
                     'We deliver across the UAE and selected destinations in Ghana. Estimates shown at checkout are business days.',
@@ -83,7 +83,7 @@ class ContentSeeder extends Seeder
                     ['type' => 'heading', 'text' => 'Delivery windows'],
                     ['type' => 'paragraph', 'text' => 'Standard delivery is typically 2 to 5 business days within major cities. Express options may appear when available for your address.'],
                     ['type' => 'heading', 'text' => 'Fees'],
-                    ['type' => 'paragraph', 'text' => 'Shipping fees are calculated from cart contents and destination. Many items qualify for free delivery thresholds shown on the product card.'],
+                    ['type' => 'paragraph', 'text' => 'Delivery fees are calculated from cart contents and destination. Many items qualify for free delivery thresholds shown on the product card.'],
                 ],
             ],
             [
@@ -109,14 +109,14 @@ class ContentSeeder extends Seeder
                 'title' => 'Secure Payments',
                 'last_updated' => 'January 1, 2026',
                 'intro' => [
-                    'H&CO uses trusted payment providers. Card details are handled by the provider, not stored on our servers.',
+                    'olloo uses trusted payment providers. Card details are handled by the provider, not stored on our servers.',
                 ],
                 'blocks' => [
                     ['type' => 'heading', 'text' => 'Providers'],
                     ['type' => 'paragraph', 'text' => 'UAE Dirham checkout uses the configured Stripe or local test provider. Ghana Cedi checkout uses Paystack.'],
                     ['type' => 'heading', 'text' => 'Safety tips'],
                     ['type' => 'bullets', 'items' => [
-                        'Only pay through official H&CO checkout pages',
+                        'Only pay through official olloo checkout pages',
                         'Enable two-factor authentication on your account when available',
                         'Contact support immediately if a charge looks unfamiliar',
                     ]],
@@ -127,11 +127,11 @@ class ContentSeeder extends Seeder
                 'title' => 'Intellectual Property',
                 'last_updated' => 'January 1, 2026',
                 'intro' => [
-                    'All H&CO trademarks, logos, product photography, and site content are protected by applicable intellectual property laws.',
+                    'All olloo trademarks, logos, product photography, and site content are protected by applicable intellectual property laws.',
                 ],
                 'blocks' => [
                     ['type' => 'heading', 'text' => 'Use of content'],
-                    ['type' => 'paragraph', 'text' => 'You may not copy, scrape, or redistribute catalog content, images, or branding without prior written permission from H&CO.'],
+                    ['type' => 'paragraph', 'text' => 'You may not copy, scrape, or redistribute catalog content, images, or branding without prior written permission from olloo.'],
                     ['type' => 'heading', 'text' => 'Brand partners'],
                     ['type' => 'paragraph', 'text' => 'Third-party brand names and logos remain the property of their respective owners and are used for identification only.'],
                 ],
@@ -141,7 +141,7 @@ class ContentSeeder extends Seeder
                 'title' => 'Terms of Use',
                 'last_updated' => 'January 1, 2026',
                 'intro' => [
-                    'By using H&CO websites and apps, you agree to these Terms of Use and our related policies.',
+                    'By using olloo websites and apps, you agree to these Terms of Use and our related policies.',
                 ],
                 'blocks' => [
                     ['type' => 'heading', 'text' => 'Accounts'],
@@ -175,7 +175,7 @@ class ContentSeeder extends Seeder
             [
                 'payload' => [
                     'hero' => [
-                        'eyebrow' => 'H&CO marketplace',
+                        'eyebrow' => 'olloo marketplace',
                         'title' => 'Shop electronics, home, and more',
                         'subtitle' => 'Curated products with clear pricing and reliable delivery across the UAE and Ghana.',
                         'ctaLabel' => 'Shop featured',
@@ -223,7 +223,7 @@ class ContentSeeder extends Seeder
                         [
                             'title' => 'Help',
                             'links' => [
-                                ['label' => 'Shipping & Delivery', 'href' => '/shipping-delivery'],
+                                ['label' => 'Delivery', 'href' => '/shipping-delivery'],
                                 ['label' => 'Return & Refund', 'href' => '/return-refund'],
                                 ['label' => 'Warranty', 'href' => '/warranty'],
                                 ['label' => 'Secure Payments', 'href' => '/secure-payments'],
@@ -243,7 +243,7 @@ class ContentSeeder extends Seeder
                         'title' => 'Stay in the loop',
                         'subtitle' => 'Product drops and order tips in your inbox.',
                     ],
-                    'copyright' => '© 2026 H&CO. All rights reserved.',
+                    'copyright' => '© 2026 olloo. All rights reserved.',
                 ],
             ],
         );

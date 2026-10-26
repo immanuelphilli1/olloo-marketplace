@@ -89,7 +89,8 @@ final class ReviewFixesTest extends TestCase
             ->assertJsonMissingPath('items.0.rating')
             ->assertJsonPath('items.0.priceMoney', ['amount' => 179, 'currency' => 'USD'])
             ->assertJsonPath('items.0.discountPercent', 18)
-            ->assertJsonPath('items.0.ratingValue', 4.7)
+            // No approved reviews yet, so the product shows the five-star default.
+            ->assertJsonPath('items.0.ratingValue', 5)
             ->assertJsonPath('items.0.reviewCount', 0)
             ->assertJsonPath('items.0.soldCount', 0);
 

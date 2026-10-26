@@ -3,7 +3,7 @@ import { apiRequest } from '../client'
 import type {
   ApiProductCard,
   ApiProductDetailResponse,
-  ApiProductReview,
+  ApiProductReviewsResponse,
   CategoriesResponse,
   CategoryPanelResponse,
   PaginatedProductsResponse,
@@ -237,17 +237,26 @@ export async function getRelatedProducts(
   )
 }
 
+/**
+ * A product's approved reviews. Signed-in shoppers send their token and skip
+ * the shared cache, because the answer then carries their own `myReview`.
+ */
 export async function getProductReviews(
   productRid: string,
   page = 1,
   limit = 10,
-): Promise<{ reviews: ApiProductReview[]; total: number; avgRating?: number }> {
-  return cachedGet(buildCacheKey(`products/${productRid}/reviews`, { page, limit }), () =>
-    apiRequest<{ reviews: ApiProductReview[]; total: number; avgRating?: number }>(
-      `/products/${productRid}/reviews`,
-      { auth: false, cart: false, searchParams: { page, limit } },
-    ),
-  )
+  options: { signedIn?: boolean } = {},
+): Promise<ApiProductReviewsResponse> {
+  const request = () =>
+    apiRequest<ApiProductReviewsResponse>(`/products/${productRid}/reviews`, {
+      auth: options.signedIn === true,
+      cart: false,
+      searchParams: { page, limit },
+    })
+
+  return options.signedIn
+    ? request()
+    : cachedGet(buildCacheKey(`products/${productRid}/reviews`, { page, limit }), request)
 }
 
 /**

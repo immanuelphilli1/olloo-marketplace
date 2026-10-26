@@ -320,7 +320,7 @@ export function CategoryForm({
                 <button
                     type="submit"
                     disabled={processing}
-                    className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     {processing ? 'Saving…' : submitLabel}
                 </button>

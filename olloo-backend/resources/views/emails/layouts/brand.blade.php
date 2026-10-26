@@ -1,6 +1,6 @@
 @php
     $shell = config('email-shell.brand');
-    $subject = $subject ?? ($shell['name'] ?? 'HandCO');
+    $subject = $subject ?? ($shell['name'] ?? 'olloo');
     $preheader = trim($__env->yieldContent('preheader'));
     $logoUrl = $logoUrl ?? email_logo_url();
     $width = (int) ($shell['width'] ?? 560);

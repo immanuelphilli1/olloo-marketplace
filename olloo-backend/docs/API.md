@@ -56,7 +56,8 @@ AuthUser = {
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `POST` | `/auth/check-email` | No | Email-first sign-in step |
-| `POST` | `/auth/login` | No | Email + password login |
+| `POST` | `/auth/check-phone` | No | Phone-first sign-in step (Ghana mobile numbers) |
+| `POST` | `/auth/login` | No | Email or phone + password login |
 | `POST` | `/auth/register` | No | Create account after email step |
 | `GET` | `/auth/oauth/:provider/url` | No | Google consent URL + `state` (`google` only) |
 | `POST` | `/auth/oauth/:provider` | No | Exchange Google `code` + `state` for tokens |
@@ -80,6 +81,20 @@ AuthUser = {
 
 `nextStep` is `register`, `password`, or `oauth`. For `oauth` (account created with Google, no password) the response also has `"oauthProvider": "google"`.
 
+#### `POST /auth/check-phone`
+
+**Request**
+```json
+{ "phone": "024 123 4567" }
+```
+
+**Response**
+```json
+{ "exists": false, "nextStep": "register", "phone": "+233241234567" }
+```
+
+Any common spelling of a Ghana mobile number is accepted (`0241234567`, `+233 24 123 4567`, `233241234567`, `241234567`) and normalised to E.164, returned as `phone`. Landlines and foreign numbers fail with `422 validation_error` ("Enter a valid Ghana mobile number, such as 024 123 4567."). `nextStep` is `register` or `password`.
+
 #### `POST /auth/register`
 
 **Request**
@@ -87,7 +102,7 @@ AuthUser = {
 { "email": "ama@example.com", "password": "••••••••", "password_confirmation": "••••••••", "fullName": "Ama Mensah", "country": "GH" }
 ```
 
-`country` (required) is the country of residence as an ISO code from `GET /addresses/lookup/countries`. It becomes the shopper's preferred country, so prices follow that market. `displayName` is optional and defaults to the first word of `fullName`. Errors: `422 validation_error`, `422 country_not_found`. Response: `201`, same shape as login.
+`phone` (optional) is a Ghana mobile number, normalised as in `check-phone` and stored as the account's sign-in number (`users.login_phone`); a number already on a live account fails with `422 validation_error`. `email` stays required: Paystack needs it for every charge and password reset is by email. `country` (required) is the country of residence as an ISO code from `GET /addresses/lookup/countries`. It becomes the shopper's preferred country, so prices follow that market. `displayName` is optional and defaults to the first word of `fullName`. Errors: `422 validation_error`, `422 country_not_found`. Response: `201`, same shape as login.
 
 #### `POST /auth/login`
 
@@ -95,6 +110,14 @@ AuthUser = {
 ```json
 { "email": "user@example.com", "password": "••••••••" }
 ```
+
+or, with a phone number instead of `email`:
+
+```json
+{ "phone": "0241234567", "password": "••••••••" }
+```
+
+The auth `user` object carries `phone` (E.164, or `null` for email-only accounts).
 
 **Response**
 ```json
@@ -272,9 +295,18 @@ Product cards carry `deliveryQuote` (`{ free, fee, minDays, maxDays }`, computed
     { "rid": "pv_1", "name": "Standard", "size": "M", "color": "Navy", "sku": "AEROSMART-EARBUDS-STD", "priceMoney": { "amount": 179, "currency": "USD" }, "priceInclTaxMoney": null, "isDefault": true, "stockQuantity": 12, "inStock": true, "handlingDays": 2, "deliveryQuote": null }
   ],
   "shippingFeeMoney": { "amount": 20, "currency": "USD" },
-  "deliveryDays": { "min": 2, "max": 5 }
+  "deliveryDays": { "min": 2, "max": 5 },
+  "family": {
+    "optionName": "Size",
+    "options": [
+      { "rid": "p_32", "value": "32 inch", "priceMoney": { "amount": 1500, "currency": "USD" }, "originalPriceMoney": null, "inStock": true, "imageUrl": "…", "isCurrent": true },
+      { "rid": "p_43", "value": "43 inch", "priceMoney": { "amount": 2100, "currency": "USD" }, "originalPriceMoney": null, "inStock": true, "imageUrl": "…", "isCurrent": false }
+    ]
+  }
 }
 ```
+
+`ratingValue` (here and on list items) is the approved-review average, or `5` while `reviewCount` is 0, so unreviewed products start at five stars; show the count beside it. `family` lists separately uploaded products that share the admin "Size options" family key (one model in several sizes), in natural order of `value`, with the current product flagged; it is `null` unless at least two active products share the key.
 
 Variants carry `size` and `color` separately for fashion options. `shippingFeeMoney` is
 `null` when no rule applies. `stockQuantity: null` means the variant is not stock-tracked. List items also carry `inStock` and `attributes` (`[{ "key": "brand", "label": "Brand", "value": "Sony" }, ...]`, in category order, `label` being the display name staff set on the category); filter any attribute by key with `?attributes[key]=value`, and facets include `attributes` (`{ key: [values] }`) and `attributeLabels` (`{ key: label }`).
@@ -294,7 +326,8 @@ Variants carry `size` and `color` separately for fashion options. `shippingFeeMo
     }
   ],
   "total": 42,
-  "avgRating": 4.7
+  "avgRating": 4.7,
+  "myReview": null
 }
 ```
 
@@ -729,7 +762,11 @@ WaitingReviewRecord = {
 | `GET` | `/reviews/reviewed` | Yes | Submitted reviews |
 | `POST` | `/reviews` | Yes | Submit a review |
 
+`myReview` is the signed-in caller's own review of this product in any status (`"status": "pending" | "published"`), so a review awaiting approval still shows to its author; `null` for guests and for shoppers who have not reviewed it.
+
 #### `POST /reviews`
+
+An order line can be reviewed once its order is paid (`payment_status = paid`) and not cancelled; it does not have to be delivered first. Reviews publish after staff approve them in the admin Reviews page.
 
 **Request**
 ```json

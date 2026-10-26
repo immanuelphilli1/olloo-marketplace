@@ -181,7 +181,7 @@ export default function Index({
                 <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
                     <button
                         type="submit"
-                        className="cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-800"
+                        className="cursor-pointer rounded-md bg-brand px-4 py-2 text-sm text-white hover:bg-brand-dark"
                     >
                         Filter
                     </button>

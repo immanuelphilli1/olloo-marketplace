@@ -297,7 +297,7 @@ export function AddReviewModal({ review, onClose, onSubmitSuccess }: AddReviewMo
               <div className="flex w-full shrink-0 flex-col items-stretch gap-2 lg:w-42.25 lg:items-center">
                 <button
                   type="button"
-                  className="flex h-8.5 cursor-pointer items-center justify-center rounded-full border border-primary-orange px-4 text-sm font-medium leading-4 tracking-[-0.28px] text-primary-orange"
+                  className="flex h-8.5 cursor-pointer items-center justify-center rounded-full border border-brand px-4 text-sm font-medium leading-4 tracking-[-0.28px] text-brand"
                 >
                   Buy again
                 </button>
@@ -333,7 +333,7 @@ export function AddReviewModal({ review, onClose, onSubmitSuccess }: AddReviewMo
               {errorMessage ? (
                 <p
                   role="alert"
-                  className="rounded-xl bg-orange-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-primary-orange"
+                  className="rounded-xl bg-brand-light px-4 py-3 text-sm font-medium leading-4.5 tracking-[-0.28px] text-brand"
                 >
                   {errorMessage}
                 </p>
@@ -343,7 +343,7 @@ export function AddReviewModal({ review, onClose, onSubmitSuccess }: AddReviewMo
                 type="button"
                 onClick={() => void handleSubmit()}
                 disabled={isSubmitting}
-                className="btn-orange flex h-10 w-fit cursor-pointer items-center justify-center rounded-full px-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-60"
+                className="btn-brand flex h-10 w-fit cursor-pointer items-center justify-center rounded-full px-4 text-base font-medium leading-5 tracking-[-0.32px] text-text-inverse disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? 'Submitting…' : 'Submit your review'}
               </button>

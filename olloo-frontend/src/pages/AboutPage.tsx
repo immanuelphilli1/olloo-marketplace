@@ -16,13 +16,11 @@ import type { Product } from '../data/products'
 export function AboutPage() {
   const navigate = useNavigate()
   const {
-    activeCategoryId,
     categoriesTargetId,
     closeCategories,
     handleSubcategorySelect,
     isCategoriesOpen,
     toggleCategories,
-    toggleCategoriesFromLinkBar,
   } = useCategoryNavigation()
 
   const handleOpenCart = useCallback(() => {
@@ -53,8 +51,6 @@ export function AboutPage() {
         onCloseCategories={closeCategories}
         onSubcategorySelect={handleSubcategorySelect}
         showCategoryLinksBar
-        onOpenCategories={toggleCategoriesFromLinkBar}
-        activeCategoryId={activeCategoryId}
         onOpenCart={handleOpenCart}
         onOpenWishlist={handleOpenWishlist}
         onAfterSignOut={handleGoHome}
@@ -65,7 +61,7 @@ export function AboutPage() {
           onGoHome={handleGoHome}
           onProductSelect={handleProductSelect}
         />
-        <Footer onOpenCategories={toggleCategoriesFromLinkBar} />
+        <Footer />
       </div>
       <BackToTopButton />
     </>
